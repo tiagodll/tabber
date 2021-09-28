@@ -1,0 +1,75 @@
+@import "https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css";
+@import "https://cdn.materialdesignicons.com/5.4.55/css/materialdesignicons.min.css";
+
+html, body {
+  height: 100%;
+  overflow-x: hidden; 
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+#main {
+  flex: 1;
+}
+
+#main > .columns {
+  min-height: 100%;
+}
+
+.sidebar {
+  width: 250px;
+  background: whitesmoke;
+  min-height: 100%;
+}
+
+#notification-area {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+#notification-area > div {
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 5px;
+}
+
+.disable-select {
+  -webkit-user-select: none;  
+  -moz-user-select: none;    
+  -ms-user-select: none;      
+  user-select: none;
+}
+
+.add-habit-button {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+}
+
+.habit-dashboard-button-zero{
+  border: solid gray 1px;
+  background-color: lightgray;
+}
+
+.habit-dashboard-button{
+  border: solid green 1px;
+  background-color: lightgreen;
+}
+
+.dashboard-date{
+  vertical-align: middle;
+  padding: 0px 5px;
+}
+
+
+@media screen and (min-width: 1024px) {
+  .navbar {
+  margin-bottom: 15px;
+  }
+}
