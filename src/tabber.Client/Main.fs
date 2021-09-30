@@ -9,6 +9,7 @@ open Bolero.Templating.Client
 open Microsoft.JSInterop
 open Microsoft.AspNetCore.Components.Forms
 open System.Text.RegularExpressions
+open System.Web
 // open FSharpPlus
 
 /// Routing endpoints definition.
@@ -133,7 +134,7 @@ let update (js:IJSRuntime) message model =
     | SetTabText text ->
         let metadata = matchMetadata text
         let tab = {
-            id = metadata.band + metadata.song + DateTime.Now.Millisecond.ToString()
+            id = HttpUtility.UrlEncode(metadata.band + metadata.song + DateTime.Now.Millisecond.ToString())
             band = metadata.band
             title = metadata.song
             riffs = matchRiffs text
@@ -145,7 +146,7 @@ let update (js:IJSRuntime) message model =
         let tabs' = match model.tab with
                     | None -> model.tabs
                     | Some tab -> List.append model.tabs [tab]
-        {model with tabs=tabs'}, Cmd.none
+        {model with tabs=tabs'; page=Dashboard}, Cmd.none
         
  
 let router = Router.infer SetPage (fun model -> model.page)
@@ -198,15 +199,18 @@ let editPage model dispatch =
         textarea [attr.``class`` "textarea"; bind.input.string model.tabText (dispatch << SetTabText)][]
         button[attr.classes ["button"; "is-small"]; on.click (fun _ -> dispatch SaveTab)][text "save"]
 
-        input [attr.``type`` "text"] 
+        // input [attr.``type`` "text"; bind.input.string model.tab.id (dispatch << SetTitle)]
         div[attr.classes ["tab"]][
             match model.tab with
             | None -> div[][]
             | Some tab -> 
                 div[][
+                    span[][text tab.id]
+                    br[]
                     span[attr.classes ["title"]] [text tab.band]
                     span[][text " - "]
                     span[attr.classes ["title"]] [text tab.title]
+                    br[]
                     ul[attr.classes ["riffs"]] [
                         forEach tab.riffs <| fun riff ->
                         li [attr.classes ["riff"]][
@@ -214,7 +218,7 @@ let editPage model dispatch =
                             pre[][text riff.content]
                         ]
                     ]
-                    ul[attr.classes ["sequence"]] [
+                    ul[attr.classes ["sequence"] ] [
                         forEach tab.sequence <| fun seq ->
                         li [attr.classes ["riff"]][
                             span[][text seq.name]
