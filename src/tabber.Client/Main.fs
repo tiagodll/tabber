@@ -31,6 +31,7 @@ type Model =
 and Tab =
     {
         id: string
+        band: string
         title: string
         riffs: Riff list
         sequence: Sequence list
@@ -56,7 +57,7 @@ let initModel =
         error = None
     }
 
-let createTab = { id="new"; title="x"; riffs=[]; sequence=[] }
+let createTab = { id="new"; band="x"; title="y"; riffs=[]; sequence=[] }
 
 type Message =
     | SetPage of Page
@@ -65,6 +66,7 @@ type Message =
     | TabsLoaded of Tab[]
     | FileLoaded of InputFileChangeEventArgs
     | SetTabText of string
+    | SaveTab
 
 let saveHabitsToLocalStorage (js:IJSRuntime) habits' =
     js.InvokeVoidAsync("ToStorage", {|label="habits"; value=habits'|}).AsTask() |> ignore
@@ -77,6 +79,33 @@ let dateMask = "yyyy-MM-dd"
 let LoadCheckins (js:IJSRuntime) (date:DateTime) =
     Cmd.OfJS.either js "FromStorage" [| "tabs_" + date.ToString("yyyy-MM-dd") |] TabsLoaded Error
 
+
+let matchMetadata text =
+    let pattern = "^(?<band>(?:\w* *)+) - (?<song>(?:\w* *)+\n)"
+    let mutable m = Regex.Match(text, pattern)
+    match m.Success with
+        | false -> {| band=""; song="" |}
+        | true -> {| band=m.Groups.["band"].Value; song=m.Groups.["song"].Value |}
+
+let matchRiffs text =
+    let pattern = "(?<title>\[Riff \d\])\n(?<content>(?:[GDAE]\|[\-\—\d]*\n)*)"
+    let mutable m = Regex.Match(text, pattern)
+    let mutable list = []
+    while m.Success do
+        let item = {name=m.Groups.["title"].Value; content=m.Groups.["content"].Value}
+        list <- List.append list [item]
+        m <- m.NextMatch()
+    list
+
+let matchSeq text =
+    let pattern = "(?<riff>Riff \d+)x(?<reps>\d*)\n*"
+    let mutable m = Regex.Match(text, pattern)
+    let mutable list = []
+    while m.Success do
+        let item = {name=m.Groups.["riff"].Value; reps=m.Groups.["reps"].Value |> int}
+        list <- List.append list [item]
+        m <- m.NextMatch()
+    list
 
 let update (js:IJSRuntime) message model =
     // let onSignIn = function
@@ -102,24 +131,21 @@ let update (js:IJSRuntime) message model =
         model, Cmd.none
 
     | SetTabText text ->
-        let riffsPattern = "(?<title>\[Riff \d\])\n(?<content>(?:[GDAE]\|[\-\—\d]*\n)*)"
-        // let matched = Regex.Match(text, riffsPattern)
-        let mutable m = Regex.Match(text, riffsPattern)
-        let mutable tab = {id=""; title=""; riffs=[]; sequence=[]}
-        while m.Success do
-            let riff = {name=m.Groups.["title"].Value; content=m.Groups.["content"].Value}
-            tab <- {tab with riffs = List.append tab.riffs [riff]}
-            m <- m.NextMatch()
-
-        let seqPattern = "(?<riff>Riff \d+)x(?<reps>\d*)\n*"
-        let mutable m2 = Regex.Match(text, seqPattern)
-        while m2.Success do
-            let seq = {name=m2.Groups.["riff"].Value; reps=1}//m2.Groups.["reps"].Value}
-            tab <- {tab with sequence = List.append tab.sequence [seq]}
-            m2 <- m2.NextMatch()
-        // //gm
-        //let (tab: Tab option) = tryParse text
+        let metadata = matchMetadata text
+        let tab = {
+            id = metadata.band + metadata.song + DateTime.Now.Millisecond.ToString()
+            band = metadata.band
+            title = metadata.song
+            riffs = matchRiffs text
+            sequence = matchSeq text
+        }
         {model with tabText=text; tab=Some tab}, Cmd.none
+
+    | SaveTab ->
+        let tabs' = match model.tab with
+                    | None -> model.tabs
+                    | Some tab -> List.append model.tabs [tab]
+        {model with tabs=tabs'}, Cmd.none
         
  
 let router = Router.infer SetPage (fun model -> model.page)
@@ -168,15 +194,18 @@ let editPage model dispatch =
                 | Some tab -> tab
     div[] [
         h3 [] [text tab.id]
-        h1 [attr.``class`` "title"] [text tab.title]
         ul [attr.classes ["tile"; "is-ancestor"]] []
         textarea [attr.``class`` "textarea"; bind.input.string model.tabText (dispatch << SetTabText)][]
+        button[attr.classes ["button"; "is-small"]; on.click (fun _ -> dispatch SaveTab)][text "save"]
 
+        input [attr.``type`` "text"] 
         div[attr.classes ["tab"]][
             match model.tab with
             | None -> div[][]
             | Some tab -> 
                 div[][
+                    span[attr.classes ["title"]] [text tab.band]
+                    span[][text " - "]
                     span[attr.classes ["title"]] [text tab.title]
                     ul[attr.classes ["riffs"]] [
                         forEach tab.riffs <| fun riff ->
