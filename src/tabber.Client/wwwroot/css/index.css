@@ -73,3 +73,20 @@ body {
   margin-bottom: 15px;
   }
 }
+
+
+ul.riffs {
+  display: inline-block
+}
+ul.sequence {
+  display: inline-block
+}
+
+ul.riffs li.selected{
+  background-color: rgb(252, 255, 47);
+  border: solid red 1px
+}
+ul.sequence li.selected{
+  background-color: rgb(252, 255, 47);
+  border: solid red 1px
+}

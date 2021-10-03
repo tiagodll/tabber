@@ -1,5 +1,11 @@
 'use strict';
 
+window.onkeydown = (event) => {
+    console.log("### Keydown ###: ")
+    console.log(element);
+    //DotNet.invokeMethodAsync('tabber.Client', '{.NET METHOD ID}', {ARGUMENTS});
+}
+
 window.SetFocus = (element) => {
     console.log("### SetFocus ###: ")
     console.log(element)

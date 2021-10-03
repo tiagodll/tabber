@@ -10,6 +10,7 @@ open Microsoft.JSInterop
 open Microsoft.AspNetCore.Components.Forms
 open System.Text.RegularExpressions
 open System.Web
+open Microsoft.AspNetCore.Components.Web
 // open FSharpPlus
 
 /// Routing endpoints definition.
@@ -22,13 +23,20 @@ type Page =
 type Model =
     {
         page: Page
-        counter: int
         tab: Tab option
         tabText: string
         tabs: Tab list
         error: string option
+        state: State
     }
 
+and State = {
+    play: PlayState
+}
+and PlayState = {
+    currentRiff: string
+    counter: int
+}
 and Tab =
     {
         id: string
@@ -51,13 +59,13 @@ and Sequence =
 let initModel =
     {
         page = Dashboard
-        counter = 0
         tab = None
         tabText = ""
         tabs = []
         error = None
+        state = { play = { counter=0; currentRiff="" } }
     }
-
+// let createPlayState = { currentCount=0; currentRiff="" }
 let createTab = { id="new"; band="x"; title="y"; riffs=[]; sequence=[] }
 
 type Message =
@@ -68,6 +76,11 @@ type Message =
     | FileLoaded of InputFileChangeEventArgs
     | SetTabText of string
     | SaveTab
+    | MouseOverSeq of string
+    | IncreaseCounter
+    | DecreaseCounter
+    | ResetCounter
+    | Keydown of KeyboardEventArgs
 
 let saveHabitsToLocalStorage (js:IJSRuntime) habits' =
     js.InvokeVoidAsync("ToStorage", {|label="habits"; value=habits'|}).AsTask() |> ignore
@@ -108,6 +121,8 @@ let matchSeq text =
         m <- m.NextMatch()
     list
 
+// let keyDownEvent e = 
+
 let update (js:IJSRuntime) message model =
     // let onSignIn = function
     //     | Some _ -> Cmd.ofMsg GetTabs
@@ -141,12 +156,44 @@ let update (js:IJSRuntime) message model =
             sequence = matchSeq text
         }
         {model with tabText=text; tab=Some tab}, Cmd.none
+    
+    | IncreaseCounter ->
+        let riff = match model.tab with
+                    | None -> ""
+                    | Some tab -> "[" + tab.sequence.Item(model.state.play.counter+1).name + "]"
+        let play' = {model.state.play with currentRiff=riff; counter=model.state.play.counter+1}
+        let state' = {model.state with play=play'}
+        {model with state=state'}, Cmd.none
+    | DecreaseCounter ->
+        let riff = match model.tab with
+                    | None -> ""
+                    | Some tab -> "[" + tab.sequence.Item(model.state.play.counter-1).name + "]"
+        let play' = {model.state.play with currentRiff=riff; counter=model.state.play.counter-1}
+        let state' = {model.state with play=play'}
+        {model with state=state'}, Cmd.none
+    | ResetCounter ->
+        let riff = match model.tab with
+                    | None -> ""
+                    | Some tab -> "[" + tab.sequence.Item(0).name + "]"
+        let play' = {model.state.play with currentRiff=riff; counter=0}
+        let state' = {model.state with play=play'}
+        {model with state=state'}, Cmd.none
+
+    | MouseOverSeq name ->
+        js.InvokeVoidAsync("Log", [name]).AsTask() |> ignore
+        let play' = {model.state.play with currentRiff=name}
+        let state' = {model.state with play=play'}
+        {model with state=state'}, Cmd.none
 
     | SaveTab ->
         let tabs' = match model.tab with
                     | None -> model.tabs
                     | Some tab -> List.append model.tabs [tab]
         {model with tabs=tabs'; page=Dashboard}, Cmd.none
+
+    | Keydown e ->
+        js.InvokeVoidAsync("Log", [e.Code; e.Key; e.Repeat.ToString(); e.Type]).AsTask() |> ignore
+        model, Cmd.none
         
  
 let router = Router.infer SetPage (fun model -> model.page)
@@ -162,7 +209,7 @@ let dashboardPage (model:Model) dispatch =
         span [] [text "xxxxxxxxxxx"]
         // input[attr.``type`` "file"; on.change (fun args -> dispatch (FileLoaded args))]
         //ifile
-        a [ attr.classes ["icon"; "is-large"; "is-clickable"; "has-text-primary"; "add-habit-button"]; 
+        a [ //attr.classes ["icon"; "is-large"; "is-clickable"; "has-text-primary"; "add-habit-button"]; 
             attr.href (router.Link <| Edit "new")][
                 i[attr.classes["mdi"; "mdi-48px"; "mdi-plus-circle"]][]
         ]
@@ -178,14 +225,48 @@ let playPage model dispatch =
     match model.tab with
     | None -> div[][ text "no tab selected" ]
     | Some tab ->
-        div[] [
-            h1 [attr.``class`` "title"] [text tab.title]
-            ul [attr.classes ["tile"; "is-ancestor"]] [
-            // forEach model.tabs <| fun tab ->
-            //     li [attr.classes ["tile"; "is-child box"; "habit-dashboard-button"]][
-            //         span[][text <| tab.title]
-            //         // span[attr.classes ["icon"]][i[attr.classes ["mdi"; "mdi-trash-can"]; on.click (fun x_ -> dispatch (RemoveHabitSent habit))][]]
-            //     ]
+        div[attr.classes ["tab"]][
+            span[][text <| "counter: " + model.state.play.counter.ToString() + " "]
+            button[on.click (fun _ -> dispatch DecreaseCounter)][text " - "]
+            button[on.click (fun _ -> dispatch IncreaseCounter)][text " + "]
+            button[on.click (fun _ -> dispatch ResetCounter)][text " 0 "]
+            br[]
+            span[][text tab.id]
+            br[]
+            span[attr.classes ["title"]] [text tab.band]
+            span[][text " - "]
+            span[attr.classes ["title"]] [text tab.title]
+            br[]
+            ul[attr.classes ["riffs"]] [
+                forEach tab.riffs <| fun (riff: Riff) ->
+                let selected = match String.Compare(riff.name, model.state.play.currentRiff) with
+                                        | 0 -> "selected"
+                                        | _ -> ""
+                li [attr.classes ["riff"; selected]
+                    attr.id riff.name
+                    ][
+                    span[][text riff.name]
+                    pre[][text riff.content]
+                ]
+            ]
+            ul[attr.classes ["sequence"] ] [
+                let mutable counter=0;
+                forEach tab.sequence <| fun seq ->
+                //let name = HttpUtility.UrlEncode(seq.name)
+                let selected = match counter - model.state.play.counter with
+                                        | 0 -> "selected"
+                                        | _ -> ""
+                counter <- counter + 1 //seq.reps
+
+                li [
+                    attr.classes ["riff"; selected]
+                    attr.id seq.name
+                    on.click (fun _ -> dispatch <| MouseOverSeq ("["+seq.name+"]"))
+                ][
+                    span[][text seq.name]
+                    span[][text " x "]
+                    span[][text <| seq.reps.ToString()]
+                ]
             ]
         ]
 
@@ -260,6 +341,13 @@ let view model dispatch =
             ]
         ]
     ]
+// open System.Timers
+// let subscription = 
+//     Cmd.ofSub <| fun dispatch ->
+//         let timer = new Timer(100.)
+//         timer.add_Elapsed(fun _ e ->
+//             dispatch (Tick e.SignalTime))
+//         timer.Start()
 
 type Pnorco() =
     inherit ProgramComponent<Model, Message>()
@@ -269,6 +357,7 @@ type Pnorco() =
         let update = update this.JSRuntime
         Program.mkProgram init update view
         |> Program.withRouter router
+        // |> Program.withSubscription subscription
 #if DEBUG
         |> Program.withHotReload
 #endif
