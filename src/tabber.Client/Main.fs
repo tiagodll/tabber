@@ -10,8 +10,6 @@ open Microsoft.JSInterop
 open Microsoft.AspNetCore.Components.Forms
 open System.Text.RegularExpressions
 open System.Web
-open Microsoft.AspNetCore.Components.Web
-// open FSharpPlus
 
 /// Routing endpoints definition.
 type Page =
@@ -69,6 +67,7 @@ let initModel =
 let createTab = { id="new"; band="x"; title="y"; riffs=[]; sequence=[] }
 
 type Message =
+    | Init
     | SetPage of Page
     | Error of exn
     | ClearError
@@ -80,7 +79,7 @@ type Message =
     | IncreaseCounter
     | DecreaseCounter
     | ResetCounter
-    | Keydown of KeyboardEventArgs
+    | Keydown of string
 
 let saveHabitsToLocalStorage (js:IJSRuntime) habits' =
     js.InvokeVoidAsync("ToStorage", {|label="habits"; value=habits'|}).AsTask() |> ignore
@@ -121,13 +120,26 @@ let matchSeq text =
         m <- m.NextMatch()
     list
 
-// let keyDownEvent e = 
+type KeydownCallback(f: string -> unit) =
+    [<JSInvokable>]
+    member this.Invoke(arg1) = f (arg1)
+
+let ofKeyDown f = DotNetObjectReference.Create(KeydownCallback(f))
 
 let update (js:IJSRuntime) message model =
+    let setupJSCallback = 
+        Cmd.ofSub (fun dispatch -> 
+            let onKeydown k = dispatch (Keydown k)
+            js.InvokeVoidAsync("initOnKeyDownCallback", ofKeyDown onKeydown).AsTask() |> ignore
+        )
+
     // let onSignIn = function
     //     | Some _ -> Cmd.ofMsg GetTabs
     //     | None -> Cmd.none
     match message with
+    | Init -> 
+        js.InvokeVoidAsync("Log", ["## INIT ###"]).AsTask() |> ignore
+        model, setupJSCallback
     | SetPage page ->
         { model with page = page }, Cmd.none
     | Error exn ->
@@ -191,9 +203,12 @@ let update (js:IJSRuntime) message model =
                     | Some tab -> List.append model.tabs [tab]
         {model with tabs=tabs'; page=Dashboard}, Cmd.none
 
-    | Keydown e ->
-        js.InvokeVoidAsync("Log", [e.Code; e.Key; e.Repeat.ToString(); e.Type]).AsTask() |> ignore
-        model, Cmd.none
+    | Keydown key ->
+        js.InvokeVoidAsync("Log", [key]).AsTask() |> ignore
+        match key with
+        | "ArrowLeft" | "ArrowUp" -> model, Cmd.ofMsg IncreaseCounter
+        | "ArrowRight" | "ArrowDown" -> model, Cmd.ofMsg DecreaseCounter
+        | _ -> model, Cmd.ofMsg ResetCounter
         
  
 let router = Router.infer SetPage (fun model -> model.page)
@@ -341,23 +356,16 @@ let view model dispatch =
             ]
         ]
     ]
-// open System.Timers
-// let subscription = 
-//     Cmd.ofSub <| fun dispatch ->
-//         let timer = new Timer(100.)
-//         timer.add_Elapsed(fun _ e ->
-//             dispatch (Tick e.SignalTime))
-//         timer.Start()
 
 type Pnorco() =
     inherit ProgramComponent<Model, Message>()
 
     override this.Program =
-        let init _ = initModel, Cmd.none //Cmd.OfJS.either this.JSRuntime "FromStorage" [| "tabs" |] TabsLoaded Error
+        let init _ = initModel, Cmd.ofMsg Init //Cmd.OfJS.either this.JSRuntime "FromStorage" [| "tabs" |] TabsLoaded Error
         let update = update this.JSRuntime
+
         Program.mkProgram init update view
         |> Program.withRouter router
-        // |> Program.withSubscription subscription
 #if DEBUG
         |> Program.withHotReload
 #endif
