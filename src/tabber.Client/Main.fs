@@ -76,7 +76,7 @@ type Message =
     | SetPage of Page
     | Error of exn
     | ClearError
-    | TabsLoaded of Tab[]
+    | TabsLoaded of string list
     | FileLoaded of InputFileChangeEventArgs
     | SetTabText of string
     | SaveTab
@@ -86,16 +86,16 @@ type Message =
     | ResetCounter
     | Keydown of string
 
-let saveHabitsToLocalStorage (js:IJSRuntime) habits' =
-    js.InvokeVoidAsync("ToStorage", {|label="habits"; value=habits'|}).AsTask() |> ignore
+let saveTabsToLocalStorage (js:IJSRuntime) tab' =
+    js.InvokeVoidAsync("ToStorage", {|label="tabs"; value=tab'|}).AsTask() |> ignore
 
 let saveToFilesystem (js:IJSRuntime) data =
     js.InvokeVoidAsync("SaveToFilesystem", {|data=data|}).AsTask() |> ignore
 
 let dateMask = "yyyy-MM-dd"
 
-let LoadCheckins (js:IJSRuntime) (date:DateTime) =
-    Cmd.OfJS.either js "FromStorage" [| "tabs_" + date.ToString("yyyy-MM-dd") |] TabsLoaded Error
+let LoadTabs (js:IJSRuntime) =
+    Cmd.OfJS.either js "FromStorage" [| "tabs" |] TabsLoaded Error
 
 
 let matchMetadata text =
@@ -144,7 +144,7 @@ let update (js:IJSRuntime) message model =
     match message with
     | Init -> 
         js.InvokeVoidAsync("Log", ["## INIT ###"]).AsTask() |> ignore
-        model, setupJSCallback
+        model, Cmd.batch [ setupJSCallback; LoadTabs js ]
     | SetPage page ->
         match page with
         | Edit id -> 
@@ -165,10 +165,13 @@ let update (js:IJSRuntime) message model =
     | ClearError ->
         { model with error = None }, Cmd.none
 
-    | TabsLoaded tabs ->
-        // {model with tabs = tabs}, Cmd.none
-        // {model with tabs = []}, Cmd.none
-        model, Cmd.none
+    | TabsLoaded tabs' ->
+        js.InvokeVoidAsync("Log", [tabs']).AsTask() |> ignore
+        // FSharp.Data.JsonExtensions
+        // let dashboard' = {model.state.dashboard with tabs = tabs'}
+        // let state' = {model.state with dashboard = dashboard'}
+        let state' = model.state
+        {model with state=state'}, Cmd.none
 
     | FileLoaded file ->
         js.InvokeVoidAsync("Log", [file]).AsTask() |> ignore
@@ -190,6 +193,7 @@ let update (js:IJSRuntime) message model =
                 sequence = matchSeq text
             }
             let editState = {edit with tabText=text; tab=tab}
+            saveTabsToLocalStorage js model.state.dashboard.tabs |> ignore
             {model with state={model.state with edit=Some editState}}, Cmd.none
     
     | IncreaseCounter ->

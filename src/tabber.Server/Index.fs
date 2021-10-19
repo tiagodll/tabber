@@ -12,13 +12,13 @@ let page = doctypeHtml [] [
         title [] [text "Tabber"]
         ``base`` [attr.href "/"]
         link [attr.rel "stylesheet"; attr.href "css/index.css"]
-        script [attr.src "interop.js"][]
+        script [attr.src "js/interop.js"][]
     ]
     body [] [
         nav [attr.classes ["navbar"; "is-dark"]; "role" => "navigation"; attr.aria "label" "main navigation"] [
             div [attr.classes ["navbar-brand"]] [
                 a [attr.classes ["navbar-item"; "is-size-5"]; attr.href "/"] [
-                    img [attr.style "height:50px"; attr.src "/logo.png"]
+                    img [attr.style "height:50px"; attr.src "img/logo.png"]
                     text " tabber"
                 ]
             ]
