@@ -21,19 +21,27 @@ type Page =
 type Model =
     {
         page: Page
-        tab: Tab option
-        tabText: string
-        tabs: Tab list
         error: string option
         state: State
     }
 
 and State = {
-    play: PlayState
+    play: PlayState option
+    dashboard: DashboardState
+    edit: EditState option
 }
 and PlayState = {
+    tab: Tab
     currentRiff: string
-    counter: int
+    riffCounter: int
+    repCounter: int
+}
+and DashboardState = {
+    tabs: Tab list
+}
+and EditState = {
+    tab: Tab
+    tabText: string
 }
 and Tab =
     {
@@ -57,11 +65,8 @@ and Sequence =
 let initModel =
     {
         page = Dashboard
-        tab = None
-        tabText = ""
-        tabs = []
         error = None
-        state = { play = { counter=0; currentRiff="" } }
+        state = { play = None; edit = None; dashboard= { tabs = [] } }
     }
 // let createPlayState = { currentCount=0; currentRiff="" }
 let createTab = { id="new"; band="x"; title="y"; riffs=[]; sequence=[] }
@@ -141,7 +146,20 @@ let update (js:IJSRuntime) message model =
         js.InvokeVoidAsync("Log", ["## INIT ###"]).AsTask() |> ignore
         model, setupJSCallback
     | SetPage page ->
-        { model with page = page }, Cmd.none
+        match page with
+        | Edit id -> 
+            let edit' = match id with
+                        | "new" -> { tab=createTab; tabText="" }
+                        | _ ->
+                            let tab' = List.find (fun x -> x.id=id) model.state.dashboard.tabs
+                            { tab = tab'; tabText = "implement the tab.toText" }
+            { model with page = page; state={model.state with edit=Some edit'} }, Cmd.none
+        | Play id ->
+            let play' = match model.state.dashboard.tabs |> List.tryFind (fun x -> x.id=id) with
+                        | None -> { tab=createTab; currentRiff = ""; riffCounter = 0; repCounter = 0 }
+                        | Some tab -> { tab = tab; currentRiff = ""; riffCounter = 0; repCounter = 0 }
+            { model with page = page; state={model.state with play=Some play'} }, Cmd.none
+        | _ -> { model with page = page }, Cmd.none
     | Error exn ->
         { model with error = Some exn.Message }, Cmd.none
     | ClearError ->
@@ -149,7 +167,8 @@ let update (js:IJSRuntime) message model =
 
     | TabsLoaded tabs ->
         // {model with tabs = tabs}, Cmd.none
-        {model with tabs = []}, Cmd.none
+        // {model with tabs = []}, Cmd.none
+        model, Cmd.none
 
     | FileLoaded file ->
         js.InvokeVoidAsync("Log", [file]).AsTask() |> ignore
@@ -159,49 +178,62 @@ let update (js:IJSRuntime) message model =
         model, Cmd.none
 
     | SetTabText text ->
-        let metadata = matchMetadata text
-        let tab = {
-            id = HttpUtility.UrlEncode(metadata.band + metadata.song + DateTime.Now.Millisecond.ToString())
-            band = metadata.band
-            title = metadata.song
-            riffs = matchRiffs text
-            sequence = matchSeq text
-        }
-        {model with tabText=text; tab=Some tab}, Cmd.none
+        match  model.state.edit with
+        | None -> model, Cmd.none
+        | Some edit ->
+            let metadata = matchMetadata text
+            let tab = {
+                id = HttpUtility.UrlEncode(metadata.band + metadata.song + DateTime.Now.Millisecond.ToString())
+                band = metadata.band
+                title = metadata.song
+                riffs = matchRiffs text
+                sequence = matchSeq text
+            }
+            let editState = {edit with tabText=text; tab=tab}
+            {model with state={model.state with edit=Some editState}}, Cmd.none
     
     | IncreaseCounter ->
-        let riff = match model.tab with
-                    | None -> ""
-                    | Some tab -> "[" + tab.sequence.Item(model.state.play.counter+1).name + "]"
-        let play' = {model.state.play with currentRiff=riff; counter=model.state.play.counter+1}
-        let state' = {model.state with play=play'}
-        {model with state=state'}, Cmd.none
+        match model.state.play with
+        | None -> model, Cmd.none
+        | Some play -> 
+            let (riffc', repc') = match play.riffCounter, play.repCounter, play.tab.sequence.Item(play.riffCounter).reps with
+                                    | (riffc, repc, reps) when repc + 2 > reps -> (riffc + 1, 0)
+                                    | (riffc, repc, reps) -> (riffc, repc + 1)
+
+            let riff = play.tab.sequence.Item(riffc').name
+            let play' = {play with currentRiff=riff; riffCounter=riffc'; repCounter=repc'}
+            let state' = {model.state with play=Some play'}
+            {model with state=state'}, Cmd.none
     | DecreaseCounter ->
-        let riff = match model.tab with
-                    | None -> ""
-                    | Some tab -> "[" + tab.sequence.Item(model.state.play.counter-1).name + "]"
-        let play' = {model.state.play with currentRiff=riff; counter=model.state.play.counter-1}
-        let state' = {model.state with play=play'}
-        {model with state=state'}, Cmd.none
+        match model.state.play with
+        | None -> model, Cmd.none
+        | Some play -> 
+            let riff = play.tab.sequence.Item(play.riffCounter-1).name
+            let play' = {play with currentRiff=riff; riffCounter=play.riffCounter-1; repCounter=0}
+            let state' = {model.state with play=Some play'}
+            {model with state=state'}, Cmd.none
     | ResetCounter ->
-        let riff = match model.tab with
-                    | None -> ""
-                    | Some tab -> "[" + tab.sequence.Item(0).name + "]"
-        let play' = {model.state.play with currentRiff=riff; counter=0}
-        let state' = {model.state with play=play'}
-        {model with state=state'}, Cmd.none
+        match model.state.play with
+        | None -> model, Cmd.none
+        | Some play -> 
+            let riff = play.tab.sequence.Item(0).name
+            let play' = {play with currentRiff=riff; riffCounter=0; repCounter=0}
+            let state' = {model.state with play=Some play'}
+            {model with state=state'}, Cmd.none
 
     | MouseOverSeq name ->
         js.InvokeVoidAsync("Log", [name]).AsTask() |> ignore
-        let play' = {model.state.play with currentRiff=name}
-        let state' = {model.state with play=play'}
-        {model with state=state'}, Cmd.none
+        // let play' = {model.state.play with currentRiff=name}
+        // let state' = {model.state with play=play'}
+        // {model with state=state'}, Cmd.none
+        model, Cmd.none
 
     | SaveTab ->
-        let tabs' = match model.tab with
-                    | None -> model.tabs
-                    | Some tab -> List.append model.tabs [tab]
-        {model with tabs=tabs'; page=Dashboard}, Cmd.none
+        match model.state.edit with
+        | None -> model, Cmd.none
+        | Some edit ->
+            let tabs' = List.append model.state.dashboard.tabs [edit.tab]
+            {model with state={model.state with dashboard={model.state.dashboard with tabs=tabs'}}; page=Dashboard}, Cmd.none
 
     | Keydown key ->
         js.InvokeVoidAsync("Log", [key]).AsTask() |> ignore
@@ -216,9 +248,9 @@ let router = Router.infer SetPage (fun model -> model.page)
 let dashboardPage (model:Model) dispatch =
     div [] [
         ul [attr.classes ["tile"; "is-ancestor"]] [
-            forEach model.tabs <| fun tab ->
+            forEach model.state.dashboard.tabs <| fun tab ->
                 li [attr.classes ["tile"; "is-child box"; "habit-dashboard-button-zero"; "disable-select"]][
-                        a[attr.href (router.Link (Play tab.title))][text <| tab.title]
+                        a[attr.href (router.Link (Play tab.id))][text <| tab.title]
                 ]
         ]
         span [] [text "xxxxxxxxxxx"]
@@ -237,38 +269,50 @@ let formField (labelText:string) (control) =
     ]
 
 let playPage model dispatch =
-    match model.tab with
+    match model.state.play with
     | None -> div[][ text "no tab selected" ]
-    | Some tab ->
+    | Some play ->
         div[attr.classes ["tab"]][
-            span[][text <| "counter: " + model.state.play.counter.ToString() + " "]
+            span[][text <| "counter: " + play.riffCounter.ToString() + " # " + play.repCounter.ToString()]
             button[on.click (fun _ -> dispatch DecreaseCounter)][text " - "]
             button[on.click (fun _ -> dispatch IncreaseCounter)][text " + "]
             button[on.click (fun _ -> dispatch ResetCounter)][text " 0 "]
             br[]
-            span[][text tab.id]
+            span[][text play.tab.id]
             br[]
-            span[attr.classes ["title"]] [text tab.band]
+            span[attr.classes ["title"]] [text play.tab.band]
             span[][text " - "]
-            span[attr.classes ["title"]] [text tab.title]
+            span[attr.classes ["title"]] [text play.tab.title]
             br[]
+            // ul[][
+            //     play.tab.riffs
+            //     |> List.map (fun x -> li[][text x.name])
+            // ]
             ul[attr.classes ["riffs"]] [
-                forEach tab.riffs <| fun (riff: Riff) ->
-                let selected = match String.Compare(riff.name, model.state.play.currentRiff) with
-                                        | 0 -> "selected"
-                                        | _ -> ""
-                li [attr.classes ["riff"; selected]
-                    attr.id riff.name
-                    ][
-                    span[][text riff.name]
-                    pre[][text riff.content]
-                ]
+                let makeLi (clas:string) (riff: Riff option) =
+                    match riff with
+                    | None -> li[][ text "nothing"]
+                    | Some r -> 
+                        li [attr.classes ["riff"; clas]; attr.id r.name][
+                            span[][text <| "[" + r.name + "]"]
+                            pre[][text r.content]
+                        ]
+
+                li[][text play.tab.sequence.[play.riffCounter].name]
+
+                play.tab.riffs
+                |> List.tryFind (fun (x:Riff) -> x.name = play.tab.sequence.[play.riffCounter].name)
+                |> makeLi "current"
+                
+                play.tab.riffs
+                |> List.tryFind (fun (x:Riff) -> x.name = play.tab.sequence.[play.riffCounter+1].name)
+                |> makeLi "next"
             ]
             ul[attr.classes ["sequence"] ] [
                 let mutable counter=0;
-                forEach tab.sequence <| fun seq ->
+                forEach play.tab.sequence <| fun seq ->
                 //let name = HttpUtility.UrlEncode(seq.name)
-                let selected = match counter - model.state.play.counter with
+                let selected = match counter - play.riffCounter with
                                         | 0 -> "selected"
                                         | _ -> ""
                 counter <- counter + 1 //seq.reps
@@ -276,7 +320,7 @@ let playPage model dispatch =
                 li [
                     attr.classes ["riff"; selected]
                     attr.id seq.name
-                    on.click (fun _ -> dispatch <| MouseOverSeq ("["+seq.name+"]"))
+                    on.click (fun _ -> dispatch <| MouseOverSeq (seq.name))
                 ][
                     span[][text seq.name]
                     span[][text " x "]
@@ -286,36 +330,33 @@ let playPage model dispatch =
         ]
 
 let editPage model dispatch =
-    let tab = match model.tab with
-                | None -> createTab
-                | Some tab -> tab
-    div[] [
-        h3 [] [text tab.id]
-        ul [attr.classes ["tile"; "is-ancestor"]] []
-        textarea [attr.``class`` "textarea"; bind.input.string model.tabText (dispatch << SetTabText)][]
-        button[attr.classes ["button"; "is-small"]; on.click (fun _ -> dispatch SaveTab)][text "save"]
+    match model.state.edit with
+    | None -> div[][ text "no tab selected" ]
+    | Some edit ->
+        div[] [
+            h3 [] [text edit.tab.id]
+            ul [attr.classes ["tile"; "is-ancestor"]] []
+            textarea [attr.``class`` "textarea"; bind.input.string edit.tabText (dispatch << SetTabText)][]
+            button[attr.classes ["button"; "is-small"]; on.click (fun _ -> dispatch SaveTab)][text "save"]
 
-        // input [attr.``type`` "text"; bind.input.string model.tab.id (dispatch << SetTitle)]
-        div[attr.classes ["tab"]][
-            match model.tab with
-            | None -> div[][]
-            | Some tab -> 
+            // input [attr.``type`` "text"; bind.input.string model.tab.id (dispatch << SetTitle)]
+            div[attr.classes ["tab"]][
                 div[][
-                    span[][text tab.id]
+                    span[][text edit.tab.id]
                     br[]
-                    span[attr.classes ["title"]] [text tab.band]
+                    span[attr.classes ["title"]] [text edit.tab.band]
                     span[][text " - "]
-                    span[attr.classes ["title"]] [text tab.title]
+                    span[attr.classes ["title"]] [text edit.tab.title]
                     br[]
                     ul[attr.classes ["riffs"]] [
-                        forEach tab.riffs <| fun riff ->
+                        forEach edit.tab.riffs <| fun riff ->
                         li [attr.classes ["riff"]][
                             span[][text riff.name]
                             pre[][text riff.content]
                         ]
                     ]
                     ul[attr.classes ["sequence"] ] [
-                        forEach tab.sequence <| fun seq ->
+                        forEach edit.tab.sequence <| fun seq ->
                         li [attr.classes ["riff"]][
                             span[][text seq.name]
                             span[][text " x "]
@@ -323,8 +364,8 @@ let editPage model dispatch =
                         ]
                     ]
                 ]
+            ]
         ]
-    ]
 
 let errorNotification err clear =
     div [attr.classes ["notification"; "is-warning"]] [

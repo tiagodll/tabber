@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": "src/tabber.Client"
+		},
+		{
+			"path": "src/tabber.Server"
+		},
+		{
+			"path": "data"
+		}
+	],
+	"settings": {
+		"files.exclude": {
+			"**/bin": true,
+			"**/obj": true
+		}
+	}
+}

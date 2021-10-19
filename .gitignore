@@ -23,3 +23,5 @@ Debug
 obj
 bin
 *.exe
+.fake
+.ionide

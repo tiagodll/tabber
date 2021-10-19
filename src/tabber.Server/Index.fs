@@ -18,7 +18,7 @@ let page = doctypeHtml [] [
         nav [attr.classes ["navbar"; "is-dark"]; "role" => "navigation"; attr.aria "label" "main navigation"] [
             div [attr.classes ["navbar-brand"]] [
                 a [attr.classes ["navbar-item"; "is-size-5"]; attr.href "/"] [
-                    img [attr.style "height:50px"; attr.src "/img/logo_green.png"]
+                    img [attr.style "height:50px"; attr.src "/logo.png"]
                     text " tabber"
                 ]
             ]
