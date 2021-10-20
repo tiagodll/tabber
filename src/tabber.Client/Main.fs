@@ -222,7 +222,7 @@ let update (js:IJSRuntime) message model =
         | Some play -> 
             let (riffc', repc') = match play.riffCounter, play.repCounter, play.tab.sequence.Item(play.riffCounter).reps with
                                     | (riffc, repc, reps) when repc + 2 > reps -> (riffc + 1, 0)
-                                    | (riffc, repc, reps) -> (riffc, repc + 1)
+                                    | (riffc, repc, _) -> (riffc, repc + 1)
 
             let riff = play.tab.sequence.Item(riffc').name
             let play' = {play with currentRiff=riff; riffCounter=riffc'; repCounter=repc'}
@@ -314,10 +314,7 @@ let playPage model dispatch =
             span[][text " - "]
             span[attr.classes ["title"]] [text play.tab.title]
             br[]
-            // ul[][
-            //     play.tab.riffs
-            //     |> List.map (fun x -> li[][text x.name])
-            // ]
+            
             div[attr.classes ["container"]][
                 ul[attr.classes ["riffs"]] [
                     let makeLi (clas:string) (riff: Riff option) =
@@ -329,15 +326,14 @@ let playPage model dispatch =
                                 pre[][text r.content]
                             ]
 
-                    // li[][text play.tab.sequence.[play.riffCounter].name]
-
                     play.tab.riffs
                     |> List.tryFind (fun (x:Riff) -> x.name = play.tab.sequence.[play.riffCounter].name)
                     |> makeLi "current"
                     
-                    play.tab.riffs
-                    |> List.tryFind (fun (x:Riff) -> x.name = play.tab.sequence.[play.riffCounter+1].name)
-                    |> makeLi "next"
+                    if play.riffCounter < play.tab.sequence.Length - 1 then
+                        play.tab.riffs
+                        |> List.tryFind (fun (x:Riff) -> x.name = play.tab.sequence.[play.riffCounter+1].name)
+                        |> makeLi "next"
                 ]
                 div[attr.classes ["riff-counter"]][
                     (play.tab.sequence.[play.riffCounter].reps - play.repCounter).ToString()
