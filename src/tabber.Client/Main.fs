@@ -76,7 +76,7 @@ type Message =
     | SetPage of Page
     | Error of exn
     | ClearError
-    | TabsLoaded of string list
+    | TabsLoaded of string[]
     | FileLoaded of InputFileChangeEventArgs
     | SetTabText of string
     | SaveTab
@@ -125,6 +125,32 @@ let matchSeq text =
         m <- m.NextMatch()
     list
 
+let riffsToString (riffs:Riff list) =
+    riffs
+    |> List.map (fun x -> x.name + "\n" + x.content)
+    |> String.concat "\n"
+
+let seqToString (seq:Sequence list) =
+    seq
+    |> List.map (fun x -> x.name + "x" + x.reps.ToString() + "\n")
+    |> List.fold (fun acc x -> acc + x) "[Sequence]\n"
+
+let tabToString (tabs:Tab list) =
+    tabs
+        |> List.map (fun x -> x.band + " - " + x.title + "\n" + (riffsToString x.riffs) + "\n" + (seqToString x.sequence) )
+
+let textToTab text =
+    let metadata = matchMetadata text
+    {
+        id = HttpUtility.UrlEncode(metadata.band + metadata.song + DateTime.Now.Millisecond.ToString())
+        band = metadata.band
+        title = metadata.song
+        riffs = matchRiffs text
+        sequence = matchSeq text
+    }
+
+// type TabResponse = FSharp.Data.JsonProvider<"../../data/jsonSample.json", SampleIsList=true>
+
 type KeydownCallback(f: string -> unit) =
     [<JSInvokable>]
     member this.Invoke(arg1) = f (arg1)
@@ -165,12 +191,15 @@ let update (js:IJSRuntime) message model =
     | ClearError ->
         { model with error = None }, Cmd.none
 
-    | TabsLoaded tabs' ->
-        js.InvokeVoidAsync("Log", [tabs']).AsTask() |> ignore
-        // FSharp.Data.JsonExtensions
-        // let dashboard' = {model.state.dashboard with tabs = tabs'}
-        // let state' = {model.state with dashboard = dashboard'}
-        let state' = model.state
+    | TabsLoaded tabs ->
+        js.InvokeVoidAsync("Log", [tabs]).AsTask() |> ignore
+        
+        let tabs' = tabs
+                    |> Array.toList
+                    |> List.map textToTab
+
+        let dashboard' = {model.state.dashboard with tabs = tabs'}
+        let state' = {model.state with dashboard = dashboard'}
         {model with state=state'}, Cmd.none
 
     | FileLoaded file ->
@@ -184,16 +213,7 @@ let update (js:IJSRuntime) message model =
         match  model.state.edit with
         | None -> model, Cmd.none
         | Some edit ->
-            let metadata = matchMetadata text
-            let tab = {
-                id = HttpUtility.UrlEncode(metadata.band + metadata.song + DateTime.Now.Millisecond.ToString())
-                band = metadata.band
-                title = metadata.song
-                riffs = matchRiffs text
-                sequence = matchSeq text
-            }
-            let editState = {edit with tabText=text; tab=tab}
-            saveTabsToLocalStorage js model.state.dashboard.tabs |> ignore
+            let editState = {edit with tabText=text; tab=textToTab text}
             {model with state={model.state with edit=Some editState}}, Cmd.none
     
     | IncreaseCounter ->
@@ -237,6 +257,12 @@ let update (js:IJSRuntime) message model =
         | None -> model, Cmd.none
         | Some edit ->
             let tabs' = List.append model.state.dashboard.tabs [edit.tab]
+
+            tabs'
+            |> tabToString
+            |> saveTabsToLocalStorage js
+            |> ignore
+            
             {model with state={model.state with dashboard={model.state.dashboard with tabs=tabs'}}; page=Dashboard}, Cmd.none
 
     | Keydown key ->
