@@ -74,12 +74,20 @@ body {
   }
 }
 
-
+div.container {
+  display: flex;
+  align-items: flex-start;
+  border: solid blue 1px
+}
 ul.riffs {
-  display: inline-block
+  flex-grow: 4;
 }
 ul.sequence {
-  display: inline-block
+}
+div.riff-counter{
+  border: solid green 1px;
+  padding: 10px;
+  font-size: 10em;
 }
 
 ul.riffs li.current{

@@ -106,7 +106,7 @@ let matchMetadata text =
         | true -> {| band=m.Groups.["band"].Value; song=m.Groups.["song"].Value |}
 
 let matchRiffs text =
-    let pattern = "(?<title>\[Riff \d\])\n(?<content>(?:[GDAE]\|[\-\—\d]*\n)*)"
+    let pattern = "\[(?<title>Riff \d)\]\n(?<content>(?:[GDAE]\|[\-\—\d]*\n)*)"
     let mutable m = Regex.Match(text, pattern)
     let mutable list = []
     while m.Success do
@@ -127,7 +127,7 @@ let matchSeq text =
 
 let riffsToString (riffs:Riff list) =
     riffs
-    |> List.map (fun x -> x.name + "\n" + x.content)
+    |> List.map (fun x -> "[" + x.name + "]\n" + x.content)
     |> String.concat "\n"
 
 let seqToString (seq:Sequence list) =
@@ -268,8 +268,8 @@ let update (js:IJSRuntime) message model =
     | Keydown key ->
         js.InvokeVoidAsync("Log", [key]).AsTask() |> ignore
         match key with
-        | "ArrowLeft" | "ArrowUp" -> model, Cmd.ofMsg IncreaseCounter
-        | "ArrowRight" | "ArrowDown" -> model, Cmd.ofMsg DecreaseCounter
+        | "ArrowRight" | "ArrowUp" -> model, Cmd.ofMsg IncreaseCounter
+        | "ArrowLeft" | "ArrowDown" -> model, Cmd.ofMsg DecreaseCounter
         | _ -> model, Cmd.ofMsg ResetCounter
         
  
@@ -318,43 +318,49 @@ let playPage model dispatch =
             //     play.tab.riffs
             //     |> List.map (fun x -> li[][text x.name])
             // ]
-            ul[attr.classes ["riffs"]] [
-                let makeLi (clas:string) (riff: Riff option) =
-                    match riff with
-                    | None -> li[][ text "nothing"]
-                    | Some r -> 
-                        li [attr.classes ["riff"; clas]; attr.id r.name][
-                            span[][text <| "[" + r.name + "]"]
-                            pre[][text r.content]
-                        ]
+            div[attr.classes ["container"]][
+                ul[attr.classes ["riffs"]] [
+                    let makeLi (clas:string) (riff: Riff option) =
+                        match riff with
+                        | None -> li[][ text "nothing"]
+                        | Some r -> 
+                            li [attr.classes ["riff"; clas]; attr.id r.name][
+                                span[][text <| "[" + r.name + "]"]
+                                pre[][text r.content]
+                            ]
 
-                li[][text play.tab.sequence.[play.riffCounter].name]
+                    // li[][text play.tab.sequence.[play.riffCounter].name]
 
-                play.tab.riffs
-                |> List.tryFind (fun (x:Riff) -> x.name = play.tab.sequence.[play.riffCounter].name)
-                |> makeLi "current"
-                
-                play.tab.riffs
-                |> List.tryFind (fun (x:Riff) -> x.name = play.tab.sequence.[play.riffCounter+1].name)
-                |> makeLi "next"
-            ]
-            ul[attr.classes ["sequence"] ] [
-                let mutable counter=0;
-                forEach play.tab.sequence <| fun seq ->
-                //let name = HttpUtility.UrlEncode(seq.name)
-                let selected = match counter - play.riffCounter with
-                                        | 0 -> "selected"
-                                        | _ -> ""
-                counter <- counter + 1 //seq.reps
+                    play.tab.riffs
+                    |> List.tryFind (fun (x:Riff) -> x.name = play.tab.sequence.[play.riffCounter].name)
+                    |> makeLi "current"
+                    
+                    play.tab.riffs
+                    |> List.tryFind (fun (x:Riff) -> x.name = play.tab.sequence.[play.riffCounter+1].name)
+                    |> makeLi "next"
+                ]
+                div[attr.classes ["riff-counter"]][
+                    (play.tab.sequence.[play.riffCounter].reps - play.repCounter).ToString()
+                    |> text
+                ]
+                ul[attr.classes ["sequence"] ] [
+                    let mutable counter=0;
+                    forEach play.tab.sequence <| fun seq ->
+                    //let name = HttpUtility.UrlEncode(seq.name)
+                    let selected = match counter - play.riffCounter with
+                                            | 0 -> "selected"
+                                            | _ -> ""
+                    counter <- counter + 1 //seq.reps
 
-                li [
-                    attr.classes ["riff"; selected]
-                    attr.id seq.name
-                    on.click (fun _ -> dispatch <| MouseOverSeq (seq.name))
-                ][
-                    span[][text seq.name]
-                    span[][text " x "]
-                    span[][text <| seq.reps.ToString()]
+                    li [
+                        attr.classes ["riff"; selected]
+                        attr.id seq.name
+                        on.click (fun _ -> dispatch <| MouseOverSeq (seq.name))
+                    ][
+                        span[][text seq.name]
+                        span[][text " x "]
+                        span[][text <| seq.reps.ToString()]
+                    ]
                 ]
             ]
         ]
@@ -381,7 +387,7 @@ let editPage model dispatch =
                     ul[attr.classes ["riffs"]] [
                         forEach edit.tab.riffs <| fun riff ->
                         li [attr.classes ["riff"]][
-                            span[][text riff.name]
+                            span[][text <| "[" + riff.name + "]"]
                             pre[][text riff.content]
                         ]
                     ]
@@ -413,7 +419,7 @@ let view model dispatch =
         ]
         // button[attr.classes ["button"; "is-small"]; on.click (fun _ -> dispatch SaveCheckins)][ text "Save"]
 
-        section [attr.``class`` "section"] [
+        section [] [
             // BODY
             cond model.page <| function
             | Dashboard -> dashboardPage model dispatch
