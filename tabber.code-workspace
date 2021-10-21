@@ -8,6 +8,9 @@
 		},
 		{
 			"path": "data"
+		},
+		{
+			"path": "src/pedal"
 		}
 	],
 	"settings": {

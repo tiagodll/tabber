@@ -106,7 +106,7 @@ let matchMetadata text =
         | true -> {| band=m.Groups.["band"].Value; song=m.Groups.["song"].Value |}
 
 let matchRiffs text =
-    let pattern = "\[(?<title>Riff \d)\]\n(?<content>(?:[GDAE]\|[\-\—\d]*\n)*)"
+    let pattern = "\[(?<title>Riff \d)\]\n(?<content>(?:[GDAE]\|[\-\—\d\|\s]*\n)*)"
     let mutable m = Regex.Match(text, pattern)
     let mutable list = []
     while m.Success do
@@ -116,11 +116,14 @@ let matchRiffs text =
     list
 
 let matchSeq text =
-    let pattern = "(?<riff>Riff \d+)x(?<reps>\d*)\n*"
+    let pattern = "(?<riff>Riff \d+)[\sx|\sX|x|X]*(?<reps>\d*)$"
     let mutable m = Regex.Match(text, pattern)
     let mutable list = []
     while m.Success do
-        let item = {name=m.Groups.["riff"].Value; reps=m.Groups.["reps"].Value |> int}
+        let reps' = match m.Groups.["reps"].Value with
+                    | "" -> 1
+                    | _ -> m.Groups.["reps"].Value |> int
+        let item = {name=m.Groups.["riff"].Value; reps=reps'}
         list <- List.append list [item]
         m <- m.NextMatch()
     list
@@ -315,7 +318,7 @@ let playPage model dispatch =
             span[attr.classes ["title"]] [text play.tab.title]
             br[]
             
-            div[attr.classes ["container"]][
+            div[attr.classes ["tab-container"]][
                 ul[attr.classes ["riffs"]] [
                     let makeLi (clas:string) (riff: Riff option) =
                         match riff with

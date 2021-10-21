@@ -79,6 +79,20 @@ div.container {
   align-items: flex-start;
   border: solid blue 1px
 }
+.tab-container{
+  position: absolute;
+  z-index: 1000;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom:0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+  border: solid blue 1px
+}
 ul.riffs {
   flex-grow: 4;
 }
