@@ -91,7 +91,8 @@ div.container {
   overflow: hidden;
   display: flex;
   align-items: flex-start;
-  border: solid blue 1px
+  border: solid blue 1px;
+  background: #333;
 }
 ul.riffs {
   flex-grow: 4;
