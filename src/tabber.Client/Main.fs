@@ -106,7 +106,7 @@ let matchMetadata text =
         | true -> {| band=m.Groups.["band"].Value; song=m.Groups.["song"].Value |}
 
 let matchRiffs text =
-    let pattern = "\[(?<title>Riff \d)\]\n(?<content>(?:[GDAE]\|[\-\—\d\|\s]*\n)*)"
+    let pattern = "\[(?<title>[Riff \d|Chorus]+)\]\n(?<content>(?:[GDAE]\|[\-\—\d\|\s]*\n)*)"
     let mutable m = Regex.Match(text, pattern)
     let mutable list = []
     while m.Success do
@@ -116,7 +116,7 @@ let matchRiffs text =
     list
 
 let matchSeq text =
-    let pattern = "(?<riff>Riff \d+)[\sx|\sX|x|X]*(?<reps>\d*)$"
+    let pattern = "(?<riff>Riff \d+)[\sx|\sX|x|X]*(?<reps>\d*)\n*"
     let mutable m = Regex.Match(text, pattern)
     let mutable list = []
     while m.Success do
@@ -142,14 +142,15 @@ let tabToString (tabs:Tab list) =
     tabs
         |> List.map (fun x -> x.band + " - " + x.title + "\n" + (riffsToString x.riffs) + "\n" + (seqToString x.sequence) )
 
-let textToTab text =
+let textToTab (text: string) =
+    let split = text.Split("[Sequence]")
     let metadata = matchMetadata text
     {
         id = HttpUtility.UrlEncode(metadata.band + metadata.song + DateTime.Now.Millisecond.ToString())
         band = metadata.band
         title = metadata.song
-        riffs = matchRiffs text
-        sequence = matchSeq text
+        riffs = matchRiffs split.[0]
+        sequence = matchSeq split.[1]
     }
 
 // type TabResponse = FSharp.Data.JsonProvider<"../../data/jsonSample.json", SampleIsList=true>
