@@ -84,15 +84,15 @@ div.container {
   z-index: 1000;
   left: 0;
   right: 0;
-  top: 0;
+  top: 50px;
   bottom:0;
   margin: 0;
-  padding: 0;
+  padding: 5px;
   overflow: hidden;
   display: flex;
-  align-items: flex-start;
-  border: solid blue 1px;
-  background: #333;
+  align-items: center;
+  /* border: solid blue 1px; */
+  background: #222;
 }
 ul.riffs {
   flex-grow: 4;
@@ -100,20 +100,39 @@ ul.riffs {
 ul.sequence {
 }
 div.riff-counter{
-  border: solid green 1px;
+  /* border: solid green 1px; */
+  color: #292;
   padding: 10px;
   font-size: 10em;
 }
 
 ul.riffs li.current{
-  background-color: rgb(252, 255, 47);
-  border: solid red 1px
+  background-color: black;
+  color: rgb(252, 255, 47);
+  border: solid #666 3px;
+  font-size: 1.2em;
 }
+ul.riffs li.current pre{
+  background: transparent;
+  color:rgb(252, 255, 47);
+}
+
 ul.riffs li.next{
-  background-color: rgb(150, 150, 150);
-  border: solid rgb(29, 29, 29) 1px
+  background-color: #252525;
+  color:#999;
+  /* border: solid rgb(29, 29, 29) 1px */
+}
+
+ul.riffs li.next pre{
+  background: transparent;
+  color:#999;
+}
+
+ul.sequence li.riff{
+  color: white;
 }
 ul.sequence li.selected{
   background-color: rgb(252, 255, 47);
-  border: solid red 1px
+  color: black;
+  /* border: solid red 1px */
 }
