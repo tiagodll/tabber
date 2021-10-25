@@ -26,6 +26,6 @@ window.ToStorage = (obj) => {
 }
 
 window.FromStorage = (label) => {
-    console.log(JSON.parse(localStorage.getItem(label)))
+    // console.log(JSON.parse(localStorage.getItem(label)))
     return JSON.parse(localStorage.getItem(label));
 }

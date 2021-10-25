@@ -7,22 +7,10 @@ html, body {
 }
 
 body {
-  display: flex;
-  flex-direction: column;
-}
-
-#main {
-  flex: 1;
-}
-
-#main > .columns {
-  min-height: 100%;
-}
-
-.sidebar {
-  width: 250px;
-  background: whitesmoke;
-  min-height: 100%;
+  /* display: flex;
+  flex-direction: column; */
+  background: #222;
+  color: #fff;
 }
 
 #notification-area {
@@ -52,22 +40,6 @@ body {
   right: 20px;
 }
 
-.habit-dashboard-button-zero{
-  border: solid gray 1px;
-  background-color: lightgray;
-}
-
-.habit-dashboard-button{
-  border: solid green 1px;
-  background-color: lightgreen;
-}
-
-.dashboard-date{
-  vertical-align: middle;
-  padding: 0px 5px;
-}
-
-
 @media screen and (min-width: 1024px) {
   .navbar {
   margin-bottom: 15px;
@@ -79,7 +51,8 @@ div.container {
   align-items: flex-start;
   border: solid blue 1px
 }
-.tab-container{
+
+.tab{
   position: absolute;
   z-index: 1000;
   left: 0;
@@ -88,9 +61,18 @@ div.container {
   bottom:0;
   margin: 0;
   padding: 5px;
+}
+
+.tab .title{
+  color: rgb(252, 255, 47);
+}
+
+.tab-container{
+  
   overflow: hidden;
   display: flex;
   align-items: center;
+  height: 100%;
   /* border: solid blue 1px; */
   background: #222;
 }

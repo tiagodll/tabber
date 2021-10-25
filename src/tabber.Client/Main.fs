@@ -11,6 +11,8 @@ open Microsoft.AspNetCore.Components.Forms
 open System.Text.RegularExpressions
 open System.Web
 
+open tabber.Client.HtmlHelper
+
 /// Routing endpoints definition.
 type Page =
     | [<EndPoint "/">] Dashboard
@@ -26,7 +28,7 @@ type Model =
     }
 
 and State = {
-    play: PlayState option
+    play: PlayStateOrString
     dashboard: DashboardState
     edit: EditState option
 }
@@ -36,6 +38,10 @@ and PlayState = {
     riffCounter: int
     repCounter: int
 }
+and PlayStateOrString = 
+    | PlayState of PlayState
+    | Id of string
+
 and DashboardState = {
     tabs: Tab list
 }
@@ -66,7 +72,7 @@ let initModel =
     {
         page = Dashboard
         error = None
-        state = { play = None; edit = None; dashboard= { tabs = [] } }
+        state = { play = Id ""; edit = None; dashboard= { tabs = [] } }
     }
 // let createPlayState = { currentCount=0; currentRiff="" }
 let createTab = { id="new"; band="x"; title="y"; riffs=[]; sequence=[] }
@@ -77,7 +83,7 @@ type Message =
     | Error of exn
     | ClearError
     | TabsLoaded of string[]
-    | FileLoaded of InputFileChangeEventArgs
+    // | FileLoaded of InputFileChangeEventArgs
     | SetTabText of string
     | SaveTab
     | MouseOverSeq of string
@@ -146,14 +152,12 @@ let textToTab (text: string) =
     let split = text.Split("[Sequence]")
     let metadata = matchMetadata text
     {
-        id = HttpUtility.UrlEncode(metadata.band + metadata.song + DateTime.Now.Millisecond.ToString())
+        id = HttpUtility.UrlEncode(metadata.band + "-" + metadata.song)// + DateTime.Now.Millisecond.ToString())
         band = metadata.band
         title = metadata.song
         riffs = matchRiffs split.[0]
         sequence = matchSeq split.[1]
     }
-
-// type TabResponse = FSharp.Data.JsonProvider<"../../data/jsonSample.json", SampleIsList=true>
 
 type KeydownCallback(f: string -> unit) =
     [<JSInvokable>]
@@ -168,12 +172,11 @@ let update (js:IJSRuntime) message model =
             js.InvokeVoidAsync("initOnKeyDownCallback", ofKeyDown onKeydown).AsTask() |> ignore
         )
 
-    // let onSignIn = function
-    //     | Some _ -> Cmd.ofMsg GetTabs
-    //     | None -> Cmd.none
+    js.InvokeVoidAsync("Log", ["## " + message.ToString() + " ###"]).AsTask() |> ignore
+
     match message with
     | Init -> 
-        js.InvokeVoidAsync("Log", ["## INIT ###"]).AsTask() |> ignore
+        // js.InvokeVoidAsync("Log", ["## INIT ###"]).AsTask() |> ignore
         model, Cmd.batch [ setupJSCallback; LoadTabs js ]
     | SetPage page ->
         match page with
@@ -186,9 +189,10 @@ let update (js:IJSRuntime) message model =
             { model with page = page; state={model.state with edit=Some edit'} }, Cmd.none
         | Play id ->
             let play' = match model.state.dashboard.tabs |> List.tryFind (fun x -> x.id=id) with
-                        | None -> { tab=createTab; currentRiff = ""; riffCounter = 0; repCounter = 0 }
-                        | Some tab -> { tab = tab; currentRiff = ""; riffCounter = 0; repCounter = 0 }
-            { model with page = page; state={model.state with play=Some play'} }, Cmd.none
+                        | None -> Id id
+                        | Some tab -> PlayState { tab = tab; currentRiff = ""; riffCounter = 0; repCounter = 0 }
+
+            { model with page = page; state={model.state with play=play'} }, Cmd.none
         | _ -> { model with page = page }, Cmd.none
     | Error exn ->
         { model with error = Some exn.Message }, Cmd.none
@@ -196,22 +200,31 @@ let update (js:IJSRuntime) message model =
         { model with error = None }, Cmd.none
 
     | TabsLoaded tabs ->
-        js.InvokeVoidAsync("Log", [tabs]).AsTask() |> ignore
+        // js.InvokeVoidAsync("Log", [tabs]).AsTask() |> ignore
         
         let tabs' = tabs
                     |> Array.toList
                     |> List.map textToTab
+        
+        tabs' |> List.iter (fun v -> js.InvokeVoidAsync("Log", [v.id]).AsTask() |> ignore)
 
         let dashboard' = {model.state.dashboard with tabs = tabs'}
-        let state' = {model.state with dashboard = dashboard'}
+        let play' = match model.state.play with
+                    | PlayState play -> PlayState play
+                    | Id id -> 
+                        match tabs' |> List.tryFind (fun x -> x.id=id) with
+                        | None -> Id "" //search online ?
+                        | Some tab -> PlayState { tab = tab; currentRiff = ""; riffCounter = 0; repCounter = 0 }
+                    
+        let state' = {model.state with dashboard = dashboard'; play=play'}    
         {model with state=state'}, Cmd.none
 
-    | FileLoaded file ->
-        js.InvokeVoidAsync("Log", [file]).AsTask() |> ignore
-        // let tab' = file.File;
-        // {model with tab = tab'}, Cmd.none
+    // | FileLoaded file ->
+    //     js.InvokeVoidAsync("Log", [file]).AsTask() |> ignore
+    //     let tab' = file.File;
+    //     {model with tab = tab'}, Cmd.none
         
-        model, Cmd.none
+    //     model, Cmd.none
 
     | SetTabText text ->
         match  model.state.edit with
@@ -222,31 +235,31 @@ let update (js:IJSRuntime) message model =
     
     | IncreaseCounter ->
         match model.state.play with
-        | None -> model, Cmd.none
-        | Some play -> 
+        | Id s -> model, Cmd.none
+        | PlayState play -> 
             let (riffc', repc') = match play.riffCounter, play.repCounter, play.tab.sequence.Item(play.riffCounter).reps with
                                     | (riffc, repc, reps) when repc + 2 > reps -> (riffc + 1, 0)
                                     | (riffc, repc, _) -> (riffc, repc + 1)
 
             let riff = play.tab.sequence.Item(riffc').name
-            let play' = {play with currentRiff=riff; riffCounter=riffc'; repCounter=repc'}
-            let state' = {model.state with play=Some play'}
+            let play' = PlayState {play with currentRiff=riff; riffCounter=riffc'; repCounter=repc'}
+            let state' = {model.state with play=play'}
             {model with state=state'}, Cmd.none
     | DecreaseCounter ->
         match model.state.play with
-        | None -> model, Cmd.none
-        | Some play -> 
+        | Id s -> model, Cmd.none
+        | PlayState play -> 
             let riff = play.tab.sequence.Item(play.riffCounter-1).name
-            let play' = {play with currentRiff=riff; riffCounter=play.riffCounter-1; repCounter=0}
-            let state' = {model.state with play=Some play'}
+            let play' = PlayState {play with currentRiff=riff; riffCounter=play.riffCounter-1; repCounter=0}
+            let state' = {model.state with play=play'}
             {model with state=state'}, Cmd.none
     | ResetCounter ->
         match model.state.play with
-        | None -> model, Cmd.none
-        | Some play -> 
+        | Id str -> model, Cmd.none
+        | PlayState play -> 
             let riff = play.tab.sequence.Item(0).name
-            let play' = {play with currentRiff=riff; riffCounter=0; repCounter=0}
-            let state' = {model.state with play=Some play'}
+            let play' = PlayState {play with currentRiff=riff; riffCounter=0; repCounter=0}
+            let state' = {model.state with play=play'}
             {model with state=state'}, Cmd.none
 
     | MouseOverSeq name ->
@@ -277,20 +290,35 @@ let update (js:IJSRuntime) message model =
         | _ -> model, Cmd.ofMsg ResetCounter
         
  
-let router = Router.infer SetPage (fun model -> model.page)
+let router = Router.infer SetPage (fun m -> m.page)
+
+// let router : Router<Page, Model, Message> =
+//     {
+//         getEndPoint = fun m -> m.page
+        
+//         setRoute = fun path ->
+//             match path.Trim('/').Split('/') with
+//             | [||] -> Some Dashboard
+//             | [|"play"; id|] -> Some (Play (string id))
+//             | [|"edit"; id|] -> Some (Edit (string id))
+//             | _ -> None
+//             |> Option.map SetPage
+        
+//         getRoute = function
+//             | Dashboard -> "/"
+//             | Play(id) -> sprintf "/play/%s" id
+//             | Edit(id) -> sprintf "/edit/%s" id
+//     }
 
 let dashboardPage (model:Model) dispatch =
     div [] [
-        ul [attr.classes ["tile"; "is-ancestor"]] [
+        ul [attr.classes ["list"]] [
             forEach model.state.dashboard.tabs <| fun tab ->
-                li [attr.classes ["tile"; "is-child box"; "habit-dashboard-button-zero"; "disable-select"]][
+                li [attr.classes ["link"]][
                         a[attr.href (router.Link (Play tab.id))][text <| tab.title]
                 ]
         ]
-        span [] [text "xxxxxxxxxxx"]
-        // input[attr.``type`` "file"; on.change (fun args -> dispatch (FileLoaded args))]
-        //ifile
-        a [ //attr.classes ["icon"; "is-large"; "is-clickable"; "has-text-primary"; "add-habit-button"]; 
+        a [
             attr.href (router.Link <| Edit "new")][
                 i[attr.classes["mdi"; "mdi-48px"; "mdi-plus-circle"]][]
         ]
@@ -304,22 +332,18 @@ let formField (labelText:string) (control) =
 
 let playPage model dispatch =
     match model.state.play with
-    | None -> div[][ text "no tab selected" ]
-    | Some play ->
+    | Id id when id = "" -> div[][ text "Invalid id" ]
+    | Id _ -> div[][ text "loading..." ]
+    | PlayState play ->
         div[attr.classes ["tab"]][
+            span[attr.classes ["title"]] [text <| play.tab.band + " - " + play.tab.title]
             span[][text <| "counter: " + play.riffCounter.ToString() + " # " + play.repCounter.ToString()]
             button[on.click (fun _ -> dispatch DecreaseCounter)][text " - "]
             button[on.click (fun _ -> dispatch IncreaseCounter)][text " + "]
             button[on.click (fun _ -> dispatch ResetCounter)][text " 0 "]
-            br[]
-            span[][text play.tab.id]
-            br[]
-            span[attr.classes ["title"]] [text play.tab.band]
-            span[][text " - "]
-            span[attr.classes ["title"]] [text play.tab.title]
-            br[]
-            
+
             div[attr.classes ["tab-container"]][
+                
                 ul[attr.classes ["riffs"]] [
                     let makeLi (clas:string) (riff: Riff option) =
                         match riff with
@@ -403,34 +427,20 @@ let editPage model dispatch =
             ]
         ]
 
-let errorNotification err clear =
-    div [attr.classes ["notification"; "is-warning"]] [
-        button [attr.classes ["delete"]; on.click clear ] []
-        span [] [text err]
-    ]
-
 let view model dispatch =
-    div [attr.``class`` "columns"] [
-        div[][text " x "]
-        div[attr.``class`` "has-text-centered"][
-            // button[attr.classes ["button"; "is-small"]; on.click (fun _ -> dispatch PreviousDay)][text "<"]
-            //span[attr.classes ["dashboard-date"]][text (model.date.ToString("yyyy-MM-dd"))]
-            // button[attr.classes ["button"; "is-small"]; on.click (fun _ -> dispatch NextDay)][text ">"]
-        ]
-        // button[attr.classes ["button"; "is-small"]; on.click (fun _ -> dispatch SaveCheckins)][ text "Save"]
-
-        section [] [
-            // BODY
-            cond model.page <| function
-            | Dashboard -> dashboardPage model dispatch
-            | Edit id -> editPage model dispatch
-            | Play id -> playPage model dispatch
-            //notification
-            div [attr.id "notification-area"] [
-                match model.error with
-                | None -> empty
-                | Some err -> errorNotification err (fun _ -> dispatch ClearError)
-            ]
+    section [] [
+        
+        // BODY
+        cond model.page <| function
+        | Dashboard -> dashboardPage model dispatch
+        | Edit id -> editPage model dispatch
+        | Play id -> playPage model dispatch
+        
+        //notification
+        div [attr.id "notification-area"] [
+            match model.error with
+            | None -> empty
+            | Some err -> errorNotification err (fun _ -> dispatch ClearError)
         ]
     ]
 
