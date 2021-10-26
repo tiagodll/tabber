@@ -18,7 +18,7 @@ let matchMetadata text =
         | true -> {| band=m.Groups.["band"].Value; song=m.Groups.["song"].Value |}
 
 let matchRiffs text =
-    let pattern = "\[(?<title>[Riff \d|Chorus]+)\]\n(?<content>(?:[GDAE]\|[\-\—\d\|\s]*\n)*)"
+    let pattern = "\[(?<title>(?:.+))\]\n(?<content>(?:[GDAE]\|[\-\—\d\|\s]*\n)*)"
     let mutable m = Regex.Match(text, pattern)
     let mutable list = []
     while m.Success do
@@ -28,7 +28,7 @@ let matchRiffs text =
     list
 
 let matchSeq text =
-    let pattern = "(?<riff>Riff \d+)[\sx|\sX|x|X]*(?<reps>\d*)\n*"
+    let pattern = "(?<riff>\S+)[\sx|\sX|x|X]*(?<reps>\d*)\n*"
     let mutable m = Regex.Match(text, pattern)
     let mutable list = []
     while m.Success do
