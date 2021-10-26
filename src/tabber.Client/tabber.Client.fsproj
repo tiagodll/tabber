@@ -4,8 +4,11 @@
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="HtmlHelper.fs" />
-    <Compile Include="Main.fs" />
+    <Compile Include="Model.fs" />
+    <Compile Include="Router.fs" />
+    <Compile Include="View.fs" />
+    <Compile Include="TabParser.fs" />
+    <Compile Include="Update.fs" />
     <Compile Include="Startup.fs" />
   </ItemGroup>
   <ItemGroup>

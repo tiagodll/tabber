@@ -8,7 +8,7 @@ module Program =
     [<EntryPoint>]
     let Main args =
         let builder = WebAssemblyHostBuilder.CreateDefault(args)
-        builder.RootComponents.Add<Main.Pnorco>("#main")
+        builder.RootComponents.Add<tabber.Update.Pnorco>("#pnorco")
         builder.Services.AddRemoting(builder.HostEnvironment) |> ignore
         builder.Build().RunAsync() |> ignore
         0

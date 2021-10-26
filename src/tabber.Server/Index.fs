@@ -23,7 +23,7 @@ let page = doctypeHtml [] [
                 ]
             ]
         ]
-        div [attr.id "main"] [rootComp<Client.Main.Pnorco>]
+        div [attr.id "pnorco"] [rootComp<tabber.Update.Pnorco>]
         boleroScript
     ]
 ]

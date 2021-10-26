@@ -73,16 +73,20 @@ div.container {
   display: flex;
   align-items: center;
   height: 100%;
-  /* border: solid blue 1px; */
   background: #222;
 }
+
+.tab-preview{
+  background: #222;
+}
+
 ul.riffs {
   flex-grow: 4;
 }
 ul.sequence {
+  padding: 0 10px;
 }
 div.riff-counter{
-  /* border: solid green 1px; */
   color: #292;
   padding: 10px;
   font-size: 10em;
@@ -102,7 +106,6 @@ ul.riffs li.current pre{
 ul.riffs li.next{
   background-color: #252525;
   color:#999;
-  /* border: solid rgb(29, 29, 29) 1px */
 }
 
 ul.riffs li.next pre{
@@ -116,5 +119,4 @@ ul.sequence li.riff{
 ul.sequence li.selected{
   background-color: rgb(252, 255, 47);
   color: black;
-  /* border: solid red 1px */
 }
