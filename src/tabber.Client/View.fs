@@ -38,7 +38,6 @@ let playPage model dispatch =
             button[on.click (fun _ -> dispatch ResetCounter)][text " 0 "]
 
             div[attr.classes ["tab-container"]][
-                
                 ul[attr.classes ["riffs"]] [
                     let makeLi (clas:string) (riff: Riff option) =
                         match riff with

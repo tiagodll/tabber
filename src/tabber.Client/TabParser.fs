@@ -28,7 +28,7 @@ let matchRiffs text =
     list
 
 let matchSeq text =
-    let pattern = "(?<riff>\S+)[\sx|\sX|x|X]*(?<reps>\d*)\n*"
+    let pattern = "(?<riff>.+)[\sx|\sX|x|X](?<reps>\d*)\n+"
     let mutable m = Regex.Match(text, pattern)
     let mutable list = []
     while m.Success do
