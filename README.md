@@ -60,6 +60,7 @@ enter the folder tabber/src/tabber.Server and then
 ```
 dotnet run
 ```
+now browse [https://localhost:5001](https://localhost:5001/) or [http://localhost:5000](http://localhost:5000)
 
 ## Contributing to this project
 
