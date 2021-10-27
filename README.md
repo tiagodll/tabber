@@ -1,6 +1,5 @@
+<img src="design/bass.png" style="width:100px; float:left"> 
 # Tabber - The bass playing companion
-
-<img src="design/bass.png" style="width:100px">
 
 ## Status: usable locally, but not yet deployment ready
 
