@@ -1,6 +1,6 @@
 # Tabber - The bass playing companion
 
-![logo](design/bass.png | width=100)
+<img src="design/bass.png" style="width:100px">
 
 ## Status: usable locally, but not yet deployment ready
 
