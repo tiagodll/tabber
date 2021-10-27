@@ -1,10 +1,5 @@
 module tabber.TabParser
 
-open Elmish
-open Bolero
-open Bolero.Remoting.Client
-open Bolero.Templating.Client
-open Microsoft.JSInterop
 open System.Text.RegularExpressions
 open System.Web
 
