@@ -1,6 +1,6 @@
 # Tabber - The bass playing companion
 
-![logo](https://raw.githubusercontent.com/tiagodll/tabber/30e8e3b157a7c7b956aea5e2cd4587aa4dd79ada/src/tabber.Client/wwwroot/img/logo.png?token=AAESUTTEPH27KALHXRJUWYLBPEOPI)
+![logo](design/bass.png)
 
 Do you like to play bass, but gets lost on how many times you have repeated the riff?
 Me too!!!
@@ -23,7 +23,7 @@ To restart the song, click the button restart
 Obviously pressing a key in your laptop is not very pratical while schredding on your bass
 That is why I built a pedal to make it easier to pass to the next riff
 
-![b78c3b97445f959b6a133d21f9648b7e.png](:/d26ba387d701492ba5196a8c3cd74223)
+![pedal](design/bass_pedal.png)
 
 The code is in the folder pedal
 for that you will need:
@@ -50,6 +50,8 @@ dotnet restore
 
 This app was written in F# with bolero.
 There is a very minimal server side code (folder tabber.Server), and a rich client side (tabber.Client).
+
+![screenshot](design/screenshot.png)
 
 ## Running the code
 enter the folder tabber/src/tabber.Server and then
