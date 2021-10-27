@@ -1,0 +1,69 @@
+# Tabber - The bass playing companion
+
+![logo](https://raw.githubusercontent.com/tiagodll/tabber/30e8e3b157a7c7b956aea5e2cd4587aa4dd79ada/src/tabber.Client/wwwroot/img/logo.png?token=AAESUTTEPH27KALHXRJUWYLBPEOPI)
+
+Do you like to play bass, but gets lost on how many times you have repeated the riff?
+Me too!!!
+
+No more of that with tabber.
+
+Here is how it works:
+You select a tab, click on play.
+If the tab has time signature, it will show the option to auto play. 
+
+It will show you the current riff, next one, how many repetitions you still have, and a list of the whole song structure.
+
+Once you play the riff, press the ArrowDown key to move to the next one
+If you made a mistake, press the ArrowUp key to go back
+To restart the song, click the button restart
+
+
+# Hardware
+
+Obviously pressing a key in your laptop is not very pratical while schredding on your bass
+That is why I built a pedal to make it easier to pass to the next riff
+
+![b78c3b97445f959b6a133d21f9648b7e.png](:/d26ba387d701492ba5196a8c3cd74223)
+
+The code is in the folder pedal
+for that you will need:
+- Raspberry PI pico
+- cheap pedal (7 usd from china)
+- wires
+- usb cable
+
+~~for more info check my blogpost about it~~ (not available yet)
+
+# Setup
+clone this repo:
+```bash
+git clone https://github.com/tiagodll/tabber.git
+```
+
+open that folder and type
+
+```bash
+dotnet restore
+```
+
+# Software
+
+This app was written in F# with bolero.
+There is a very minimal server side code (folder tabber.Server), and a rich client side (tabber.Client).
+
+## Running the code
+enter the folder tabber/src/tabber.Server and then
+```
+dotnet run
+```
+
+## Contributing to this project
+
+if you find a problem in the project, create an issue in this git
+
+if you want to help to fix a bug, create a branch and make a pull request
+
+if you want to add a feature, please get in contact before creating a branch.
+This is an open source project, but features have to be maintained, so not all the features can be added without considering how it affects the maintainability of the project.
+
+# Good luck and rock on 🤘
