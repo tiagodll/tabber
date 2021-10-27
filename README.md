@@ -20,7 +20,7 @@ If you made a mistake, press the ArrowUp key to go back
 To restart the song, click the button restart
 
 
-# Hardware
+# Hardware OPTIONAL!
 
 Obviously pressing a key in your laptop is not very pratical while schredding on your bass
 That is why I built a pedal to make it easier to pass to the next riff
@@ -30,11 +30,13 @@ That is why I built a pedal to make it easier to pass to the next riff
 The code is in the folder pedal
 for that you will need:
 - Raspberry PI pico
-- cheap pedal (7 usd from china)
+- cheap pedal (6 euros from china)
 - wires
 - usb cable
 
 ~~for more info check my blogpost about it~~ (not available yet)
+
+or you can also buy it online for 30 EUR or less
 
 # Setup
 clone this repo:
