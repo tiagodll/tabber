@@ -1,6 +1,8 @@
 # Tabber - The bass playing companion
 
-![logo](design/bass.png)
+![logo](design/bass.png | width=100)
+
+## Status: usable locally, but not yet deployment ready
 
 Do you like to play bass, but gets lost on how many times you have repeated the riff?
 Me too!!!
