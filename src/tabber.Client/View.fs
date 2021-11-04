@@ -21,8 +21,8 @@ let dashboardPage (model:Model) dispatch =
         span[][text "latest on the server"]
         ul [attr.classes ["list"]] [
             forEach model.state.dashboard.latestTabs <| fun tab ->
-                li [attr.classes ["link"]][ text <| tab.band + " - " + tab.title
-                        // a[attr.href (router.Link (Play tabName.id))][text <| tabName.title]
+                li [attr.classes ["link"]][
+                    a[attr.href (router.Link (Play tab.id))][text <| tab.band + " - " + tab.title]
                 ]
         ]
     ]

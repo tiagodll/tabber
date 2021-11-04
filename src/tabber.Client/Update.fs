@@ -74,7 +74,10 @@ let update (js:IJSRuntime) remote message model =
             { model with page = page; state={model.state with edit=Some edit'} }, Cmd.none
         | Play id ->
             let play' = match model.state.dashboard.tabs |> List.tryFind (fun x -> x.id=id) with
-                        | None -> Id id
+                        | None -> 
+                            match model.state.dashboard.latestTabs |> List.tryFind (fun x -> x.id=id) with
+                            | None -> Id ""   //search online ?
+                            | Some tab -> PlayState { tab = tab; currentRiff = ""; riffCounter = 0; repCounter = 0 }
                         | Some tab -> PlayState { tab = tab; currentRiff = ""; riffCounter = 0; repCounter = 0 }
 
             { model with page = page; state={model.state with play=play'} }, Cmd.none
@@ -111,7 +114,10 @@ let update (js:IJSRuntime) remote message model =
                     | PlayState play -> PlayState play
                     | Id id -> 
                         match tabs' |> List.tryFind (fun x -> x.id=id) with
-                        | None -> Id "" //search online ?
+                        | None -> 
+                            match model.state.dashboard.latestTabs |> List.tryFind (fun x -> x.id=id) with
+                            | None -> Id ""   //search online ?
+                            | Some tab -> PlayState { tab = tab; currentRiff = ""; riffCounter = 0; repCounter = 0 }
                         | Some tab -> PlayState { tab = tab; currentRiff = ""; riffCounter = 0; repCounter = 0 }
                     
         let state' = {model.state with dashboard = dashboard'; play=play'}    
