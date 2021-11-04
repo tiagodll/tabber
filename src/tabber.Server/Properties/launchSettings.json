@@ -1,0 +1,23 @@
+﻿{
+  "$schema": "http://json.schemastore.org/launchsettings.json",
+  "iisSettings": {
+    "windowsAuthentication": false, 
+    "anonymousAuthentication": true, 
+    "iisExpress": {
+      "applicationUrl": "http://localhost:5432",
+      "sslPort": 5431
+    }
+  },
+  "profiles": {
+    "Dashboard": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "api/values",
+      "applicationUrl": "http://localhost:5432",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "TABS_FOLDER": "../../data/tabs"
+      }
+    }
+  }
+}

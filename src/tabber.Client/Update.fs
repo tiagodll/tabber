@@ -2,6 +2,7 @@ module tabber.Update
 
 open Elmish
 open Bolero
+open Bolero.Remoting
 open Bolero.Remoting.Client
 open Microsoft.JSInterop
 
@@ -10,16 +11,38 @@ open tabber.Router
 open tabber.View
 open tabber.TabParser
 
+
+type TabService =
+    {
+        getLatestTabs: unit -> Async<string[]>
+        addTab: string * string -> Async<unit>
+
+        // /// Remove a Tab from the collection, identified by its ISBN.
+        // removeTab: string -> Async<unit>
+
+        signIn : string * string -> Async<option<string>>
+        getUsername : unit -> Async<string>
+        signOut : unit -> Async<unit>
+    }
+
+    interface IRemoteService with
+        member this.BasePath = "/tabs"
+
+
 let saveTabsToLocalStorage (js:IJSRuntime) tab' =
     js.InvokeVoidAsync("ToStorage", {|label="tabs"; value=tab'|}).AsTask() |> ignore
 
-let saveToFilesystem (js:IJSRuntime) data =
-    js.InvokeVoidAsync("SaveToFilesystem", {|data=data|}).AsTask() |> ignore
+let addTab remote tab =
+    let text = tab.band + " - " + tab.title + "\n" + (riffsToString tab.riffs) + "\n" + (seqToString tab.sequence)
+    Cmd.OfAsync.either remote.addTab (tab.band + " - " + tab.title, text) (fun () -> TabAdded) Error
 
 let dateMask = "yyyy-MM-dd"
 
-let LoadTabs (js:IJSRuntime) =
+let loadTabs (js:IJSRuntime) =
     Cmd.OfJS.either js "FromStorage" [| "tabs" |] TabsLoaded Error
+
+let loadLatestTabs remote =
+    Cmd.OfAsync.either remote.getLatestTabs () LatestTabsLoaded Error
 
 type KeydownCallback(f: string -> unit) =
     [<JSInvokable>]
@@ -27,7 +50,7 @@ type KeydownCallback(f: string -> unit) =
 
 let ofKeyDown f = DotNetObjectReference.Create(KeydownCallback(f))
 
-let update (js:IJSRuntime) message model =
+let update (js:IJSRuntime) remote message model =
     let setupJSCallback = 
         Cmd.ofSub (fun dispatch -> 
             let onKeydown k = dispatch (Keydown k)
@@ -39,7 +62,7 @@ let update (js:IJSRuntime) message model =
     match message with
     | Init -> 
         // js.InvokeVoidAsync("Log", ["## INIT ###"]).AsTask() |> ignore
-        model, Cmd.batch [ setupJSCallback; LoadTabs js ]
+        model, Cmd.batch [ setupJSCallback; loadTabs js; loadLatestTabs remote ]
     | SetPage page ->
         match page with
         | Edit id -> 
@@ -60,6 +83,19 @@ let update (js:IJSRuntime) message model =
         { model with error = Some exn.Message }, Cmd.none
     | ClearError ->
         { model with error = None }, Cmd.none
+
+    | LatestTabsLoaded tabs ->
+        let tabs' = tabs
+                    |> Array.toList
+                    |> List.map textToTab
+        let dashboard' = {model.state.dashboard with latestTabs = tabs'}
+        let state' = {model.state with dashboard = dashboard'}    
+        {model with state=state'}, Cmd.none
+
+    | AddTab tab ->
+        model, addTab remote tab
+    | TabAdded ->
+        model, Cmd.none
 
     | TabsLoaded tabs ->
         // js.InvokeVoidAsync("Log", [tabs]).AsTask() |> ignore
@@ -155,8 +191,9 @@ type Pnorco() =
     inherit ProgramComponent<Model, Message>()
 
     override this.Program =
+        let tabsService = this.Remote<TabService>()
         let init _ = initModel, Cmd.ofMsg Init //Cmd.OfJS.either this.JSRuntime "FromStorage" [| "tabs" |] TabsLoaded Error
-        let update = update this.JSRuntime
+        let update = update this.JSRuntime tabsService
 
         Program.mkProgram init update view
         |> Program.withRouter router

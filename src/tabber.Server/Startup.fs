@@ -23,6 +23,7 @@ type Startup() =
             .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie()
                 .Services
+            .AddRemoting<TabService>()
             .AddBoleroHost()
 #if DEBUG
             .AddHotReload(templateDir = __SOURCE_DIRECTORY__ + "/../tabber.Client")

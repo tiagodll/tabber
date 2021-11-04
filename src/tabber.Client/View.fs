@@ -17,6 +17,14 @@ let dashboardPage (model:Model) dispatch =
             attr.href (router.Link <| Edit "new")][
                 i[attr.classes["mdi"; "mdi-48px"; "mdi-plus-circle"]][]
         ]
+        br[]
+        span[][text "latest on the server"]
+        ul [attr.classes ["list"]] [
+            forEach model.state.dashboard.latestTabs <| fun tab ->
+                li [attr.classes ["link"]][ text <| tab.band + " - " + tab.title
+                        // a[attr.href (router.Link (Play tabName.id))][text <| tabName.title]
+                ]
+        ]
     ]
 
 let formField (labelText:string) (control) =
@@ -92,6 +100,8 @@ let editPage model dispatch =
             ul [attr.classes ["tile"]] []
             textarea [attr.``class`` "textarea"; bind.input.string edit.tabText (dispatch << SetTabText)][]
             button[attr.classes ["button"; "is-small"]; on.click (fun _ -> dispatch SaveTab)][text "save"]
+
+            button[attr.classes ["button"; "is-small"]; on.click (fun _ -> dispatch <| AddTab edit.tab)][text "upload to server"]
 
             // input [attr.``type`` "text"; bind.input.string model.tab.id (dispatch << SetTitle)]
             div[attr.classes ["tab-preview"]][

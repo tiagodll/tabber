@@ -30,6 +30,7 @@ and PlayStateOrString =
 
 and DashboardState = {
     tabs: Tab list
+    latestTabs: Tab list
 }
 and EditState = {
     tab: Tab
@@ -60,10 +61,14 @@ type Message =
     | SetPage of Page
     | Error of exn
     | ClearError
+    | LoadLatestTabs
+    | LatestTabsLoaded of string[]
     | TabsLoaded of string[]
+    | TabAdded
     // | FileLoaded of InputFileChangeEventArgs
     | SetTabText of string
     | SaveTab
+    | AddTab of Tab
     | MouseOverSeq of string
     | IncreaseCounter
     | DecreaseCounter
@@ -76,5 +81,5 @@ let initModel =
     {
         page = Dashboard
         error = None
-        state = { play = Id ""; edit = None; dashboard= { tabs = [] } }
+        state = { play = Id ""; edit = None; dashboard= { tabs = []; latestTabs = [] } }
     }
