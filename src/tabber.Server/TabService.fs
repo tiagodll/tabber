@@ -27,14 +27,15 @@ type TabService(ctx: IRemoteContext, env: IWebHostEnvironment) =
             // addTab = ctx.Authorize <| fun tab -> async {
             addTab = fun (name, tab) -> async {
 
-                let filepath = Path.Combine(Environment.GetEnvironmentVariable("TABS_FOLDER"), name + ".btab")
-                File.WriteAllText (filepath, tab) |> ignore
+                Path.Combine(Environment.GetEnvironmentVariable("TABS_FOLDER"), name + ".btab")
+                |> fun filepath -> File.WriteAllText (filepath, tab) 
+                |> ignore
             }
 
-            // removeTab = ctx.Authorize <| fun id -> async {
-            //     return 1
-            //     //tabs.RemoveAll(fun b -> b.id = id) |> ignore
-            // }
+            removeTab = fun id -> async {
+                Path.Combine(Environment.GetEnvironmentVariable("TABS_FOLDER"), id + ".btab")
+                |> File.Delete
+            }
 
             signIn = fun (username, password) -> async {
                 if password = "password" then

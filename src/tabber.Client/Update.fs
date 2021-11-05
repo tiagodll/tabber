@@ -16,9 +16,7 @@ type TabService =
     {
         getLatestTabs: unit -> Async<string[]>
         addTab: string * string -> Async<unit>
-
-        // /// Remove a Tab from the collection, identified by its ISBN.
-        // removeTab: string -> Async<unit>
+        removeTab: string -> Async<unit>
 
         signIn : string * string -> Async<option<string>>
         getUsername : unit -> Async<string>
@@ -36,6 +34,9 @@ let addTab remote tab =
     let text = tab.band + " - " + tab.title + "\n" + (riffsToString tab.riffs) + "\n" + (seqToString tab.sequence)
     Cmd.OfAsync.either remote.addTab (tab.band + " - " + tab.title, text) (fun () -> TabAdded) Error
 
+let removeTab remote name =
+    Cmd.OfAsync.either remote.removeTab name (fun () -> TabServerDeleted) Error
+
 let dateMask = "yyyy-MM-dd"
 
 let loadTabs (js:IJSRuntime) =
@@ -44,8 +45,6 @@ let loadTabs (js:IJSRuntime) =
 let loadLatestTabs remote =
     Cmd.OfAsync.either remote.getLatestTabs () LatestTabsLoaded Error
 
-// let deleteTab model tab =
-//     let tabs' = model.
 
 type KeydownCallback(f: string -> unit) =
     [<JSInvokable>]
@@ -116,6 +115,13 @@ let update (js:IJSRuntime) remote message model =
         let state' = {model.state with dashboard = dashboard'}    
         {model with state=state'}, Cmd.none
 
+    | DeleteServerTab tab ->
+        let name = tab.band + " - " + tab.title
+        model, removeTab remote name
+
+    | TabServerDeleted ->
+        model, loadLatestTabs remote
+
     | TabsLoaded tabs ->
         // js.InvokeVoidAsync("Log", [tabs]).AsTask() |> ignore
         
@@ -138,13 +144,6 @@ let update (js:IJSRuntime) remote message model =
                     
         let state' = {model.state with dashboard = dashboard'; play=play'}    
         {model with state=state'}, Cmd.none
-
-    // | FileLoaded file ->
-    //     js.InvokeVoidAsync("Log", [file]).AsTask() |> ignore
-    //     let tab' = file.File;
-    //     {model with tab = tab'}, Cmd.none
-        
-    //     model, Cmd.none
 
     | SetTabText text ->
         match  model.state.edit with

@@ -23,6 +23,7 @@ let dashboardPage (model:Model) dispatch =
             forEach model.state.dashboard.latestTabs <| fun tab ->
                 li [attr.classes ["link"]][
                     a[attr.href (router.Link (Play tab.id))][text <| tab.band + " - " + tab.title]
+                    i[attr.classes["mdi"; "mdi-delete"; "pointer"]; on.click (fun _ -> dispatch <| DeleteServerTab tab)][]
                 ]
         ]
     ]

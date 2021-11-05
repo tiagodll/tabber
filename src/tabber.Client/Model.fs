@@ -66,7 +66,8 @@ type Message =
     | TabsLoaded of string[]
     | TabAdded
     | DeleteTab of Tab
-    // | FileLoaded of InputFileChangeEventArgs
+    | DeleteServerTab of Tab
+    | TabServerDeleted
     | SetTabText of string
     | SaveTab
     | AddTab of Tab
