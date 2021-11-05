@@ -10,12 +10,12 @@ let dashboardPage (model:Model) dispatch =
         ul [attr.classes ["list"]] [
             forEach model.state.dashboard.tabs <| fun tab ->
                 li [attr.classes ["link"]][
-                        a[attr.href (router.Link (Play tab.id))][text <| tab.title]
+                    a[attr.href (router.Link (Play tab.id))][text <| tab.title]
+                    i[attr.classes["mdi"; "mdi-delete"; "pointer"]; on.click (fun _ -> dispatch <| DeleteTab tab)][]
                 ]
         ]
-        a [
-            attr.href (router.Link <| Edit "new")][
-                i[attr.classes["mdi"; "mdi-48px"; "mdi-plus-circle"]][]
+        a [attr.href (router.Link <| Edit "new")][
+            i[attr.classes["mdi"; "mdi-48px"; "mdi-plus-circle"]][]
         ]
         br[]
         span[][text "latest on the server"]

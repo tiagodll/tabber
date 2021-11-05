@@ -120,3 +120,8 @@ ul.sequence li.selected{
   background-color: rgb(252, 255, 47);
   color: black;
 }
+
+.pointer:hover{
+  cursor: pointer;
+  color:rgb(252, 255, 47)
+}

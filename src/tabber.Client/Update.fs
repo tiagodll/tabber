@@ -44,6 +44,9 @@ let loadTabs (js:IJSRuntime) =
 let loadLatestTabs remote =
     Cmd.OfAsync.either remote.getLatestTabs () LatestTabsLoaded Error
 
+// let deleteTab model tab =
+//     let tabs' = model.
+
 type KeydownCallback(f: string -> unit) =
     [<JSInvokable>]
     member this.Invoke(arg1) = f (arg1)
@@ -99,6 +102,19 @@ let update (js:IJSRuntime) remote message model =
         model, addTab remote tab
     | TabAdded ->
         model, Cmd.none
+
+    | DeleteTab tab ->
+        let tabs' = model.state.dashboard.tabs
+                    |> List.except [tab]
+        
+        tabs'
+            |> tabToString
+            |> saveTabsToLocalStorage js
+            |> ignore
+
+        let dashboard' = {model.state.dashboard with tabs = tabs'}
+        let state' = {model.state with dashboard = dashboard'}    
+        {model with state=state'}, Cmd.none
 
     | TabsLoaded tabs ->
         // js.InvokeVoidAsync("Log", [tabs]).AsTask() |> ignore

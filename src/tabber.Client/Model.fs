@@ -65,6 +65,7 @@ type Message =
     | LatestTabsLoaded of string[]
     | TabsLoaded of string[]
     | TabAdded
+    | DeleteTab of Tab
     // | FileLoaded of InputFileChangeEventArgs
     | SetTabText of string
     | SaveTab

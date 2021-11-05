@@ -23,14 +23,14 @@ let matchRiffs text =
     list
 
 let matchSeq text =
-    let pattern = "(?<riff>.+)[\sx|\sX|x|X](?<reps>\d*)\n+"
+    let pattern = "(?<riffd>.*(?=[x|X]\d+))[x|X](?<reps>\d*)|(?<riff>.+)"
     let mutable m = Regex.Match(text, pattern)
     let mutable list = []
     while m.Success do
-        let reps' = match m.Groups.["reps"].Value with
-                    | "" -> 1
-                    | _ -> m.Groups.["reps"].Value |> int
-        let item = {name=m.Groups.["riff"].Value; reps=reps'}
+        let riff', reps' = match m.Groups.["riffd"].Value with
+                            | "" -> m.Groups.["riff"].Value.Trim(), 1
+                            | _ -> m.Groups.["riffd"].Value.Trim(), m.Groups.["reps"].Value |> int
+        let item = {name=riff'; reps=reps'}
         list <- List.append list [item]
         m <- m.NextMatch()
     list
@@ -42,7 +42,9 @@ let riffsToString (riffs:Riff list) =
 
 let seqToString (seq:Sequence list) =
     seq
-    |> List.map (fun x -> x.name + "x" + x.reps.ToString() + "\n")
+    |> List.map (fun x -> match x.reps with
+                            | 1 -> x.name + "\n"
+                            | _ -> x.name + "x" + x.reps.ToString() + "\n")
     |> List.fold (fun acc x -> acc + x) "[Sequence]\n"
 
 let tabToString (tabs:Tab list) =
@@ -57,5 +59,5 @@ let textToTab (text: string) =
         band = metadata.band
         title = metadata.song
         riffs = matchRiffs split.[0]
-        sequence = matchSeq split.[1]
+        sequence = matchSeq (split.[1].Substring(split.[1].IndexOf("\n")))
     }
