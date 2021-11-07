@@ -61,7 +61,6 @@ type Message =
     | SetPage of Page
     | Error of exn
     | ClearError
-    | LoadLatestTabs
     | LatestTabsLoaded of string[]
     | TabsLoaded of string[]
     | TabAdded

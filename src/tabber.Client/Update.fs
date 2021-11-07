@@ -123,8 +123,6 @@ let update (js:IJSRuntime) remote message model =
         model, loadLatestTabs remote
 
     | TabsLoaded tabs ->
-        // js.InvokeVoidAsync("Log", [tabs]).AsTask() |> ignore
-        
         let tabs' = tabs
                     |> Array.toList
                     |> List.map textToTab
