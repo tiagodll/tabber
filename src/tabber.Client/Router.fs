@@ -11,7 +11,9 @@ let router : Router<Page, Model, Message> =
             match path.Trim('/').Split('/') with
             | [||] -> Some Dashboard
             | [|"play"; id|] -> Some (Play (string id))
-            | [|"edit"; id|] -> Some (Edit (string id))
+            | [|"edit"; id|] -> Some (Edit (string id))   
+            | [|"signin"|] -> Some SignIn
+            | [|"signup"|] -> Some SignUp
             | _ -> None
             |> Option.map SetPage
         
@@ -19,4 +21,6 @@ let router : Router<Page, Model, Message> =
             | Dashboard -> "/"
             | Play(id) -> sprintf "/play/%s" id
             | Edit(id) -> sprintf "/edit/%s" id
+            | SignIn -> sprintf "/signin"
+            | SignUp -> sprintf "/signup"
     }

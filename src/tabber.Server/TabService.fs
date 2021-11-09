@@ -1,7 +1,6 @@
 namespace tabber.Server
 
 open System
-open System.IO
 open Microsoft.AspNetCore.Hosting
 open Bolero.Remoting.Server
 open System.Data.SQLite
@@ -17,21 +16,6 @@ type TabService(ctx: IRemoteContext, env: IWebHostEnvironment) =
 
     override this.Handler =
         {
-            init = fun () -> async {
-                let structureSql =
-                    "CREATE TABLE IF NOT EXISTS Tabs (" +    
-                    "id TEXT, " +
-                    "band TEXT, " +
-                    "title TEXT, " + 
-                    "content TEXT, " + 
-                    "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)"
-                           
-                let structureCommand = new SQLiteCommand(structureSql, connection)
-                connection.Open()
-                structureCommand.ExecuteNonQuery() |> ignore
-                connection.Close()
-            }
-
             getLatestTabs = fun () -> async {
                 let result = new List<string>()
                 let selectSql = "SELECT * FROM Tabs ORDER BY timestamp DESC LIMIT 10"
@@ -76,19 +60,29 @@ type TabService(ctx: IRemoteContext, env: IWebHostEnvironment) =
                 connection.Close()
             }
 
-            signIn = fun (username, password) -> async {
-                if username = "tiago" && password = "asd" then
-                    do! ctx.HttpContext.AsyncSignIn(username, TimeSpan.FromDays(365.))
-                    return Some username
-                else
-                    return None
+            signIn = fun (email, password) -> async {
+                let mutable result = None
+                let selectSql = "SELECT * FROM Users ORDER BY email=@email AND password=@password DESC LIMIT 10"
+                let command = new SQLiteCommand(selectSql, connection) 
+                command.Parameters.AddWithValue("@email", email) |> ignore
+                command.Parameters.AddWithValue("@password", password) |> ignore
+                
+                connection.Open()
+                let reader = command.ExecuteReader()
+                if reader.Read() then
+                    do! ctx.HttpContext.AsyncSignIn(email, TimeSpan.FromDays(365.))
+                    result <- Some {email=email; name=reader.["name"].ToString()}
+                connection.Close()
+
+                return result
             }
 
             signOut = fun () -> async {
                 return! ctx.HttpContext.AsyncSignOut()
             }
 
-            getUsername = ctx.Authorize <| fun () -> async {
-                return ctx.HttpContext.User.Identity.Name
+            getUser = ctx.Authorize <| fun () -> async {
+                return Some {email="asd"; name="tiago"}
+                //return ctx.HttpContext.User.Identity.Name
             }
         }

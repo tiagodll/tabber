@@ -6,6 +6,8 @@ type Page =
     | Dashboard
     | Play of id: string
     | Edit of id: string
+    | SignIn
+    | SignUp
 
 
 type Model =
@@ -19,6 +21,9 @@ and State = {
     play: PlayStateOrString
     dashboard: DashboardState
     edit: EditState option
+    signedIn: User option
+    signIn: SignInState option
+    signUp: SignUpState option
 }
 and PlayState = {
     tab: Tab
@@ -37,6 +42,17 @@ and DashboardState = {
 and EditState = {
     tab: Tab
     tabText: string
+}
+and SignInState = {
+    email: string
+    password: string
+    returnPage: Page
+}
+and SignUpState = {
+    name: string
+    email: string
+    password: string
+    password2: string
 }
 
 
@@ -58,13 +74,21 @@ type Message =
     | IncreaseCounter
     | DecreaseCounter
     | ResetCounter
+    | SetEmail of string
+    | SetPassword of string
+    | SendSignIn
+    | RecvSignIn of User option
+    | SendSignOut
+    | RecvSignOut
     | Keydown of string
 
 
-let createTab = { id="new"; band="x"; title="y"; riffs=[]; sequence=[] }
+let emptySignInState returnPage = {email = ""; password = ""; returnPage = returnPage}
+let emptySignUpState = {name=""; email = ""; password = ""; password2 = ""}
+let emptyTab = { id="new"; band="x"; title="y"; riffs=[]; sequence=[] }
 let initModel =
     {
         page = Dashboard
         error = None
-        state = { play = Id ""; edit = None; dashboard= { tabs = []; latestTabs = [] } }
+        state = { play = Id ""; edit = None; dashboard= { tabs = []; latestTabs = [] }; signedIn = None; signIn = None; signUp = None }
     }

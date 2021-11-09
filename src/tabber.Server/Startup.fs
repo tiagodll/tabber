@@ -50,6 +50,9 @@ module Program =
 
     [<EntryPoint>]
     let main args =
+        
+        Db.migrate |> ignore
+
         WebHost
             .CreateDefaultBuilder(args)
             .UseStaticWebAssets()

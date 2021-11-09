@@ -15,13 +15,12 @@ open tabber.TabParserClient
 
 type TabService =
     {
-        init: unit -> Async<unit>
         getLatestTabs: unit -> Async<string[]>
         addTab: Tab -> Async<unit>
         removeTab: string -> Async<unit>
 
-        signIn : string * string -> Async<option<string>>
-        getUsername : unit -> Async<string>
+        signIn : string * string -> Async<User option>
+        getUser : unit -> Async<User option>
         signOut : unit -> Async<unit>
     }
 
@@ -69,7 +68,7 @@ let update (js:IJSRuntime) remote message model =
         match page with
         | Edit id -> 
             let edit' = match id with
-                        | "new" -> { tab=createTab; tabText="" }
+                        | "new" -> { tab=emptyTab; tabText="" }
                         | _ ->
                             let tab' = List.find (fun x -> x.id=id) model.state.dashboard.tabs
                             { tab = tab'; tabText = "implement the tab.toText" }
@@ -83,6 +82,13 @@ let update (js:IJSRuntime) remote message model =
                         | Some tab -> PlayState { tab = tab; currentRiff = ""; riffCounter = 0; repCounter = 0 }
 
             { model with page = page; state={model.state with play=play'} }, Cmd.none
+        | SignIn ->
+            let p = match model.page with
+                    | SignIn | SignUp -> Dashboard
+                    | _ -> page
+            {model with page = page; state={model.state with signIn=Some <| emptySignInState p}}, Cmd.none
+        | SignUp ->
+            {model with page = page; state={model.state with signUp=Some emptySignUpState}}, Cmd.none
         | _ -> { model with page = page }, Cmd.none
     | Error exn ->
         { model with error = Some exn.Message }, Cmd.none
@@ -186,6 +192,26 @@ let update (js:IJSRuntime) remote message model =
         // {model with state=state'}, Cmd.none
         model, Cmd.none
 
+    | SetEmail s ->
+        let signInState = {Option.defaultValue (emptySignInState Dashboard) model.state.signIn with email = s}
+        { model with state={model.state with signIn=Some signInState }}, Cmd.none
+    | SetPassword s ->
+        let signInState = {Option.defaultValue (emptySignInState Dashboard) model.state.signIn with password = s}
+        { model with state={model.state with signIn=Some signInState }}, Cmd.none
+    | SendSignIn ->
+        match model.state.signIn with
+        | None -> model, Cmd.none
+        | Some x -> model, Cmd.OfAsync.either remote.signIn (x.email, x.password) RecvSignIn Error
+    | RecvSignIn user ->
+        match user with
+        | None -> {model with error = Some "Sign in failed."}, Cmd.none
+        | Some x -> 
+            let signInState = Option.defaultValue (emptySignInState Dashboard) model.state.signIn
+            {model with error=None; state={model.state with signedIn = user}}, Cmd.ofMsg <| SetPage signInState.returnPage // load user data
+    | SendSignOut ->
+        model, Cmd.OfAsync.either remote.signOut () (fun () -> RecvSignOut) Error
+    | RecvSignOut ->
+        { model with state={model.state with signedIn=None}}, Cmd.none
     | SaveTab ->
         match model.state.edit with
         | None -> model, Cmd.none
@@ -211,7 +237,6 @@ type Pnorco() =
 
     override this.Program =
         let tabsService = this.Remote<TabService>()
-        tabsService.init() |> ignore
         let init _ = initModel, Cmd.ofMsg Init //Cmd.OfJS.either this.JSRuntime "FromStorage" [| "tabs" |] TabsLoaded Error
         let update = update this.JSRuntime tabsService
 
