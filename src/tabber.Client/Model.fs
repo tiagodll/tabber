@@ -1,5 +1,7 @@
 module tabber.Model
 
+open Tabber.Shared.Model
+
 type Page =
     | Dashboard
     | Play of id: string
@@ -36,24 +38,6 @@ and EditState = {
     tab: Tab
     tabText: string
 }
-and Tab =
-    {
-        id: string
-        band: string
-        title: string
-        riffs: Riff list
-        sequence: Sequence list
-    }
-and Riff =
-    {
-        name: string
-        content: string   
-    }
-and Sequence =
-    {
-        name: string
-        reps: int   
-    }
 
 
 type Message =

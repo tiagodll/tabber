@@ -4,10 +4,10 @@
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="TabParserClient.fs" />
     <Compile Include="Model.fs" />
     <Compile Include="Router.fs" />
     <Compile Include="View.fs" />
-    <Compile Include="TabParser.fs" />
     <Compile Include="Update.fs" />
     <Compile Include="Startup.fs" />
   </ItemGroup>
@@ -18,5 +18,8 @@
     <PackageReference Include="FSharpPlus" Version="1.2.1" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="5.0.*" />
     <PackageReference Include="System.Net.Http.Json" Version="5.0.*" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Tabber.Shared\Tabber.Shared.fsproj" />
   </ItemGroup>
 </Project>

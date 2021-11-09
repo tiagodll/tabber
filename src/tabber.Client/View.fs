@@ -2,6 +2,7 @@ module tabber.View
 
 open Bolero.Html
 
+open Tabber.Shared.Model
 open tabber.Model
 open tabber.Router
 
@@ -9,19 +10,19 @@ let dashboardPage (model:Model) dispatch =
     div [] [
         ul [attr.classes ["list"]] [
             forEach model.state.dashboard.tabs <| fun tab ->
-                li [attr.classes ["link"]][
+                li [attr.classes ["link"]] [
                     a[attr.href (router.Link (Play tab.id))][text <| tab.title]
                     i[attr.classes["mdi"; "mdi-delete"; "pointer"]; on.click (fun _ -> dispatch <| DeleteTab tab)][]
                 ]
         ]
-        a [attr.href (router.Link <| Edit "new")][
+        a [attr.href (router.Link <| Edit "new")] [
             i[attr.classes["mdi"; "mdi-48px"; "mdi-plus-circle"]][]
         ]
         br[]
         span[][text "latest on the server"]
         ul [attr.classes ["list"]] [
             forEach model.state.dashboard.latestTabs <| fun tab ->
-                li [attr.classes ["link"]][
+                li [attr.classes ["link"]] [
                     a[attr.href (router.Link (Play tab.id))][text <| tab.band + " - " + tab.title]
                     i[attr.classes["mdi"; "mdi-delete"; "pointer"]; on.click (fun _ -> dispatch <| DeleteServerTab tab)][]
                 ]
@@ -52,9 +53,9 @@ let playPage model dispatch =
                         match riff with
                         | None -> li[][ text "nothing"]
                         | Some r -> 
-                            li [attr.classes ["riff"; clas]; attr.id r.name][
-                                span[][text <| "[" + r.name + "]"]
-                                pre[][text r.content]
+                            li [attr.classes ["riff"; clas]; attr.id r.name] [
+                                span[] [text <| "[" + r.name + "]"]
+                                pre[] [text r.content]
                             ]
 
                     play.tab.riffs
@@ -83,10 +84,10 @@ let playPage model dispatch =
                         attr.classes ["riff"; selected]
                         attr.id seq.name
                         on.click (fun _ -> dispatch <| MouseOverSeq (seq.name))
-                    ][
-                        span[][text seq.name]
-                        span[][text " x "]
-                        span[][text <| seq.reps.ToString()]
+                    ] [
+                        span [] [text seq.name]
+                        span [] [text " x "]
+                        span [] [text <| seq.reps.ToString()]
                     ]
                 ]
             ]
@@ -99,29 +100,29 @@ let editPage model dispatch =
         div[attr.classes ["tag-edditor"]] [
             h3 [] [text edit.tab.id]
             ul [attr.classes ["tile"]] []
-            textarea [attr.``class`` "textarea"; bind.input.string edit.tabText (dispatch << SetTabText)][]
-            button[attr.classes ["button"; "is-small"]; on.click (fun _ -> dispatch SaveTab)][text "save"]
+            textarea [attr.``class`` "textarea"; bind.input.string edit.tabText (dispatch << SetTabText)] []
+            button [attr.classes ["button"; "is-small"]; on.click (fun _ -> dispatch SaveTab)] [text "save"]
 
-            button[attr.classes ["button"; "is-small"]; on.click (fun _ -> dispatch <| AddTab edit.tab)][text "upload to server"]
+            button [attr.classes ["button"; "is-small"]; on.click (fun _ -> dispatch <| AddTab edit.tab)] [text "upload to server"]
 
             // input [attr.``type`` "text"; bind.input.string model.tab.id (dispatch << SetTitle)]
-            div[attr.classes ["tab-preview"]][
-                span[attr.classes ["title"]] [text <| edit.tab.band + " - " + edit.tab.title]
-                span[][text edit.tab.id]
-                div[attr.classes ["tab-container"]][
-                    ul[attr.classes ["riffs"]] [
+            div[attr.classes ["tab-preview"]] [
+                span [attr.classes ["title"]] [text <| edit.tab.band + " - " + edit.tab.title]
+                span [] [text edit.tab.id]
+                div [attr.classes ["tab-container"]] [
+                    ul [attr.classes ["riffs"]] [
                         forEach edit.tab.riffs <| fun riff ->
-                        li [attr.classes ["riff"; "current"]][
-                            span[][text <| "[" + riff.name + "]"]
-                            pre[][text riff.content]
+                        li [attr.classes ["riff"; "current"]] [
+                            span [] [text <| "[" + riff.name + "]"]
+                            pre [] [text riff.content]
                         ]
                     ]
-                    ul[attr.classes ["sequence"] ] [
+                    ul [attr.classes ["sequence"] ] [
                         forEach edit.tab.sequence <| fun seq ->
-                        li [attr.classes ["riff"]][
-                            span[][text seq.name]
-                            span[][text " x "]
-                            span[][text <| seq.reps.ToString()]
+                        li [attr.classes ["riff"]] [
+                            span [] [text seq.name]
+                            span [] [text " x "]
+                            span [] [text <| seq.reps.ToString()]
                         ]
                     ]
                 ]

@@ -25,3 +25,9 @@ bin
 *.exe
 .fake
 .ionide
+
+#Paket dependency manager
+.paket/
+paket-files/
+**/db.sqlite
+.vs/

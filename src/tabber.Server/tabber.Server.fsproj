@@ -9,6 +9,9 @@
     <Compile Include="Startup.fs" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Azure.Data.Tables" Version="12.2.1" />
+    <PackageReference Include="System.Data.SQLite" Version="1.0.115.5" />
+    <ProjectReference Include="..\Tabber.Shared\Tabber.Shared.fsproj" />
     <ProjectReference Include="..\tabber.Client\tabber.Client.fsproj" />
     <PackageReference Include="Bolero.Server" Version="0.*" />
     <PackageReference Include="Bolero.HotReload.Server" Version="0.*" />

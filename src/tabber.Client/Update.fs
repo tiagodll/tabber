@@ -6,16 +6,18 @@ open Bolero.Remoting
 open Bolero.Remoting.Client
 open Microsoft.JSInterop
 
+open Tabber.Shared.Model
 open tabber.Model
 open tabber.Router
 open tabber.View
-open tabber.TabParser
+open tabber.TabParserClient
 
 
 type TabService =
     {
+        init: unit -> Async<unit>
         getLatestTabs: unit -> Async<string[]>
-        addTab: string * string -> Async<unit>
+        addTab: Tab -> Async<unit>
         removeTab: string -> Async<unit>
 
         signIn : string * string -> Async<option<string>>
@@ -31,8 +33,7 @@ let saveTabsToLocalStorage (js:IJSRuntime) tab' =
     js.InvokeVoidAsync("ToStorage", {|label="tabs"; value=tab'|}).AsTask() |> ignore
 
 let addTab remote tab =
-    let text = tab.band + " - " + tab.title + "\n" + (riffsToString tab.riffs) + "\n" + (seqToString tab.sequence)
-    Cmd.OfAsync.either remote.addTab (tab.band + " - " + tab.title, text) (fun () -> TabAdded) Error
+    Cmd.OfAsync.either remote.addTab tab (fun () -> TabAdded) Error
 
 let removeTab remote name =
     Cmd.OfAsync.either remote.removeTab name (fun () -> TabServerDeleted) Error
@@ -63,7 +64,6 @@ let update (js:IJSRuntime) remote message model =
 
     match message with
     | Init -> 
-        // js.InvokeVoidAsync("Log", ["## INIT ###"]).AsTask() |> ignore
         model, Cmd.batch [ setupJSCallback; loadTabs js; loadLatestTabs remote ]
     | SetPage page ->
         match page with
@@ -211,6 +211,7 @@ type Pnorco() =
 
     override this.Program =
         let tabsService = this.Remote<TabService>()
+        tabsService.init() |> ignore
         let init _ = initModel, Cmd.ofMsg Init //Cmd.OfJS.either this.JSRuntime "FromStorage" [| "tabs" |] TabsLoaded Error
         let update = update this.JSRuntime tabsService
 

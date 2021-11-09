@@ -1,13 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26124.0
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31825.309
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{87F6C079-CBD7-4866-BDEB-CBDEA9E51D2A}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "tabber.Server", "src\tabber.Server\tabber.Server.fsproj", "{4E2AA925-4694-4593-ADBC-F349D269587A}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "tabber.Client", "src\tabber.Client\tabber.Client.fsproj", "{1481BBD6-A6DA-4912-A03A-134880D14701}"
+EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Tabber.Shared", "src\Tabber.Shared\Tabber.Shared.fsproj", "{A679599F-566F-4927-BCFB-487E96F7075D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -43,6 +45,18 @@ Global
 		{1481BBD6-A6DA-4912-A03A-134880D14701}.Release|x64.Build.0 = Release|Any CPU
 		{1481BBD6-A6DA-4912-A03A-134880D14701}.Release|x86.ActiveCfg = Release|Any CPU
 		{1481BBD6-A6DA-4912-A03A-134880D14701}.Release|x86.Build.0 = Release|Any CPU
+		{A679599F-566F-4927-BCFB-487E96F7075D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A679599F-566F-4927-BCFB-487E96F7075D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A679599F-566F-4927-BCFB-487E96F7075D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A679599F-566F-4927-BCFB-487E96F7075D}.Debug|x64.Build.0 = Debug|Any CPU
+		{A679599F-566F-4927-BCFB-487E96F7075D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A679599F-566F-4927-BCFB-487E96F7075D}.Debug|x86.Build.0 = Debug|Any CPU
+		{A679599F-566F-4927-BCFB-487E96F7075D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A679599F-566F-4927-BCFB-487E96F7075D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A679599F-566F-4927-BCFB-487E96F7075D}.Release|x64.ActiveCfg = Release|Any CPU
+		{A679599F-566F-4927-BCFB-487E96F7075D}.Release|x64.Build.0 = Release|Any CPU
+		{A679599F-566F-4927-BCFB-487E96F7075D}.Release|x86.ActiveCfg = Release|Any CPU
+		{A679599F-566F-4927-BCFB-487E96F7075D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -50,6 +64,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{4E2AA925-4694-4593-ADBC-F349D269587A} = {87F6C079-CBD7-4866-BDEB-CBDEA9E51D2A}
 		{1481BBD6-A6DA-4912-A03A-134880D14701} = {87F6C079-CBD7-4866-BDEB-CBDEA9E51D2A}
+		{A679599F-566F-4927-BCFB-487E96F7075D} = {87F6C079-CBD7-4866-BDEB-CBDEA9E51D2A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8CFD6033-FB8D-48BE-9628-9D83DC023CAB}

@@ -1,8 +1,8 @@
-﻿{
+{
   "$schema": "http://json.schemastore.org/launchsettings.json",
   "iisSettings": {
-    "windowsAuthentication": false, 
-    "anonymousAuthentication": true, 
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
     "iisExpress": {
       "applicationUrl": "http://localhost:5432",
       "sslPort": 5431
@@ -13,11 +13,22 @@
       "commandName": "Project",
       "launchBrowser": true,
       "launchUrl": "api/values",
-      "applicationUrl": "http://localhost:5432",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "TABS_FOLDER": "../../data/tabs"
-      }
+        "CONNECTION_STRING": "Data Source=db.sqlite;Version=3;"
+      },
+      "applicationUrl": "http://localhost:5432"
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "launchBrowser": true,
+      "launchUrl": "http://localhost:5432/api/values",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5432",
+        "CONNECTION_STRING": "Data Source=db.sqlite;Version=3;"
+      },
+      "distributionName": ""
     }
   }
 }

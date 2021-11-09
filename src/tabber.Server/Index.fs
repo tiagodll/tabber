@@ -12,8 +12,8 @@ let page = doctypeHtml [] [
         title [] [text "Tabber"]
         ``base`` [attr.href "/"]
         link [attr.rel "stylesheet"; attr.href "css/index.css"]
-        script [attr.src "js/interop.js"][]
-        script [attr.src "js/matomo.js"][]
+        script [attr.src "js/interop.js"] []
+        script [attr.src "js/matomo.js"] []
     ]
     body [] [
         nav [attr.classes ["navbar"; "is-dark"]; "role" => "navigation"; attr.aria "label" "main navigation"] [
