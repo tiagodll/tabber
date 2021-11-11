@@ -4,6 +4,8 @@
     <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="TabService.fs" />
+    <Compile Include="Auth.fs" />
     <Compile Include="TabParserClient.fs" />
     <Compile Include="Model.fs" />
     <Compile Include="Router.fs" />
@@ -15,9 +17,9 @@
     <PackageReference Include="Bolero" Version="0.*" />
     <PackageReference Include="Bolero.Build" Version="0.*" />
     <PackageReference Include="Bolero.HotReload" Version="0.*" />
-    <PackageReference Include="FSharpPlus" Version="1.2.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="5.0.*" />
-    <PackageReference Include="System.Net.Http.Json" Version="5.0.*" />
+    <PackageReference Include="FSharpPlus" Version="1.2.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="6.0.0" />
+    <PackageReference Include="System.Net.Http.Json" Version="6.0.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Tabber.Shared\Tabber.Shared.fsproj" />

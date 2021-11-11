@@ -19,3 +19,10 @@ and User = {
     email: string
     name: string
 }
+and SignUpRequest = {
+    title: string
+    url: string
+    password: string
+    password2: string
+    signUpDone: bool
+}

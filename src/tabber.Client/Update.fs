@@ -11,22 +11,8 @@ open tabber.Model
 open tabber.Router
 open tabber.View
 open tabber.TabParserClient
-
-
-type TabService =
-    {
-        getLatestTabs: unit -> Async<string[]>
-        addTab: Tab -> Async<unit>
-        removeTab: string -> Async<unit>
-
-        signIn : string * string -> Async<User option>
-        getUser : unit -> Async<User option>
-        signOut : unit -> Async<unit>
-    }
-
-    interface IRemoteService with
-        member this.BasePath = "/tabs"
-
+open Tabber.Client.TabService
+open Tabber.Client
 
 let saveTabsToLocalStorage (js:IJSRuntime) tab' =
     js.InvokeVoidAsync("ToStorage", {|label="tabs"; value=tab'|}).AsTask() |> ignore
@@ -63,7 +49,7 @@ let update (js:IJSRuntime) remote message model =
 
     match message with
     | Init -> 
-        model, Cmd.batch [ setupJSCallback; loadTabs js; loadLatestTabs remote ]
+        model, Cmd.batch [ setupJSCallback; loadTabs js; loadLatestTabs remote; Cmd.ofMsg (AuthMsg Auth.GetSignedInAs) ]
     | SetPage page ->
         match page with
         | Edit id -> 
@@ -82,14 +68,8 @@ let update (js:IJSRuntime) remote message model =
                         | Some tab -> PlayState { tab = tab; currentRiff = ""; riffCounter = 0; repCounter = 0 }
 
             { model with page = page; state={model.state with play=play'} }, Cmd.none
-        | SignIn ->
-            let p = match model.page with
-                    | SignIn | SignUp -> Dashboard
-                    | _ -> page
-            {model with page = page; state={model.state with signIn=Some <| emptySignInState p}}, Cmd.none
-        | SignUp ->
-            {model with page = page; state={model.state with signUp=Some emptySignUpState}}, Cmd.none
-        | _ -> { model with page = page }, Cmd.none
+        | _ -> 
+            { model with page = page }, Cmd.none
     | Error exn ->
         { model with error = Some exn.Message }, Cmd.none
     | ClearError ->
@@ -192,26 +172,6 @@ let update (js:IJSRuntime) remote message model =
         // {model with state=state'}, Cmd.none
         model, Cmd.none
 
-    | SetEmail s ->
-        let signInState = {Option.defaultValue (emptySignInState Dashboard) model.state.signIn with email = s}
-        { model with state={model.state with signIn=Some signInState }}, Cmd.none
-    | SetPassword s ->
-        let signInState = {Option.defaultValue (emptySignInState Dashboard) model.state.signIn with password = s}
-        { model with state={model.state with signIn=Some signInState }}, Cmd.none
-    | SendSignIn ->
-        match model.state.signIn with
-        | None -> model, Cmd.none
-        | Some x -> model, Cmd.OfAsync.either remote.signIn (x.email, x.password) RecvSignIn Error
-    | RecvSignIn user ->
-        match user with
-        | None -> {model with error = Some "Sign in failed."}, Cmd.none
-        | Some x -> 
-            let signInState = Option.defaultValue (emptySignInState Dashboard) model.state.signIn
-            {model with error=None; state={model.state with signedIn = user}}, Cmd.ofMsg <| SetPage signInState.returnPage // load user data
-    | SendSignOut ->
-        model, Cmd.OfAsync.either remote.signOut () (fun () -> RecvSignOut) Error
-    | RecvSignOut ->
-        { model with state={model.state with signedIn=None}}, Cmd.none
     | SaveTab ->
         match model.state.edit with
         | None -> model, Cmd.none
@@ -231,6 +191,24 @@ let update (js:IJSRuntime) remote message model =
         | "ArrowRight" | "ArrowUp" -> model, Cmd.ofMsg IncreaseCounter
         | "ArrowLeft" | "ArrowDown" -> model, Cmd.ofMsg DecreaseCounter
         | _ -> model, Cmd.ofMsg ResetCounter
+
+    | AuthMsg msg' ->
+        match msg' with
+        | Auth.Msg.RecvSignUp x ->
+            match x with
+            | None -> model, Cmd.ofMsg (SetPage Dashboard)
+            | Some e -> 
+                let res', cmd' = Auth.update remote msg' model.auth
+                { model with auth = res' }, Cmd.map AuthMsg cmd'
+                //model, Cmd.ofMsg (SetPage Dashboard) // todo: not redirect when return error
+
+        | Auth.Msg.RecvSignIn user ->
+            { model with page=Dashboard; auth = {
+                model.auth with signedInAs = user; signIn={
+                    model.auth.signIn with signInFailed=Option.isNone user}}}, Cmd.none
+        | _ -> 
+            let res', cmd' = Auth.update remote msg' model.auth
+            { model with auth = res' }, Cmd.map AuthMsg cmd'
 
 type Pnorco() =
     inherit ProgramComponent<Model, Message>()

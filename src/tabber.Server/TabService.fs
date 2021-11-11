@@ -7,9 +7,10 @@ open System.Data.SQLite
 open System.Collections.Generic
 open Tabber.Shared.Model
 open Tabber.Shared.TabParser
+open Tabber
 
 type TabService(ctx: IRemoteContext, env: IWebHostEnvironment) =
-    inherit RemoteHandler<tabber.Update.TabService>()
+    inherit RemoteHandler<Client.TabService.TabService>()
 
     let connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING")
     let connection = new SQLiteConnection(connectionString)
@@ -62,7 +63,7 @@ type TabService(ctx: IRemoteContext, env: IWebHostEnvironment) =
 
             signIn = fun (email, password) -> async {
                 let mutable result = None
-                let selectSql = "SELECT * FROM Users ORDER BY email=@email AND password=@password DESC LIMIT 10"
+                let selectSql = "SELECT * FROM Users WHERE email=@email AND password=@password"
                 let command = new SQLiteCommand(selectSql, connection) 
                 command.Parameters.AddWithValue("@email", email) |> ignore
                 command.Parameters.AddWithValue("@password", password) |> ignore
@@ -70,8 +71,8 @@ type TabService(ctx: IRemoteContext, env: IWebHostEnvironment) =
                 connection.Open()
                 let reader = command.ExecuteReader()
                 if reader.Read() then
-                    do! ctx.HttpContext.AsyncSignIn(email, TimeSpan.FromDays(365.))
                     result <- Some {email=email; name=reader.["name"].ToString()}
+                    do! ctx.HttpContext.AsyncSignIn(email, TimeSpan.FromDays(365.))
                 connection.Close()
 
                 return result
@@ -81,8 +82,22 @@ type TabService(ctx: IRemoteContext, env: IWebHostEnvironment) =
                 return! ctx.HttpContext.AsyncSignOut()
             }
 
+            signUp = fun (signUpRequest) -> async {
+                return None
+            }
+
             getUser = ctx.Authorize <| fun () -> async {
-                return Some {email="asd"; name="tiago"}
-                //return ctx.HttpContext.User.Identity.Name
+                let mutable result = None
+                let selectSql = "SELECT * FROM Users WHERE email=@email"
+                let command = new SQLiteCommand(selectSql, connection) 
+                command.Parameters.AddWithValue("@email", ctx.HttpContext.User.Identity.Name) |> ignore
+                
+                connection.Open()
+                let reader = command.ExecuteReader()
+                if reader.Read() then
+                    result <- Some {email=reader.["email"].ToString(); name=reader.["name"].ToString()}
+                connection.Close()
+
+                return result
             }
         }

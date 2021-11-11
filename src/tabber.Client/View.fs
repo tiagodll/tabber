@@ -6,11 +6,16 @@ open Tabber.Shared.Model
 open tabber.Model
 open tabber.Router
 
+open Tabber.Client
+
 let dashboardPage (model:Model) dispatch =
     div [] [
-        match model.state.signedIn with
+        match model.auth.signedInAs with
             | None -> button [on.click (fun _ -> dispatch <| SetPage SignIn)] [text "sign in"]
-            | Some x -> span [] [text x.name]
+            | Some x ->div [] [
+                            span [] [text x.name]
+                            button [on.click (fun _ -> dispatch (AuthMsg Auth.Msg.SendSignOut))] [text "sign out"]
+                        ]
         ul [attr.classes ["list"]] [
             forEach model.state.dashboard.tabs <| fun tab ->
                 li [attr.classes ["link"]] [
@@ -27,7 +32,7 @@ let dashboardPage (model:Model) dispatch =
             forEach model.state.dashboard.latestTabs <| fun tab ->
                 li [attr.classes ["link"]] [
                     a [attr.href (router.Link (Play tab.id))] [text <| tab.band + " - " + tab.title]
-                    i [attr.classes["mdi"; "mdi-delete"; "pointer"]; on.click (fun _ -> dispatch <| DeleteServerTab tab)] []
+                    i [attr.classes ["mdi"; "mdi-delete"; "pointer"]; on.click (fun _ -> dispatch <| DeleteServerTab tab)] []
                 ]
         ]
     ]
@@ -131,49 +136,6 @@ let editPage model dispatch =
                 ]
             ]
         ]
-let signInPage model (signIn:SignInState) dispatch =
-    div [] [
-        h1 [attr.classes ["title"]] [text "Sign in"]
-        form [on.submit (fun _ -> dispatch SendSignIn)] [
-            div [attr.classes ["field"]] [
-                label [attr.classes ["label"]] [text "Email"]
-                input [attr.classes ["input"]; bind.input.string signIn.email (dispatch << SetEmail)]
-            ]
-            div [attr.classes ["field"]] [
-                label [attr.classes ["label"]] [text "Password"]
-                input [attr.classes ["input"]; attr.``type`` "password"; bind.input.string signIn.password (dispatch << SetPassword)]
-            ]
-            div [attr.classes ["field"]] [
-                input [attr.classes ["input"]; attr.``type`` "submit"; attr.value "Sign in"]
-            ]
-        ]
-    ]
-
-let signUpPage model (signup:SignUpState) dispatch =
-    div [] [
-        h1 [attr.classes ["title"]] [text "Sign in"]
-        //form [on.submit (fun _ -> dispatch SendSignIn)] [
-        //    div [attr.classes ["field"]] [
-        //        label [attr.classes ["label"]] [text "Website title"]
-        //        input [attr.classes ["input"]; bind.input.string signup.email (dispatch << SetSignUpTitle)]
-        //    ]
-        //    div [attr.classes ["field"]] [
-        //        label [attr.classes ["label"]] [text "Website Url"]
-        //        input [attr.classes ["input"]; bind.input.string signup.email (dispatch << SetSignUpUrl)]
-        //    ]
-        //    div [attr.classes ["field"]] [
-        //        label [attr.classes ["label"]] [text "Password"]
-        //        input [attr.classes ["input"]; attr.``type`` "password"; bind.input.string signup.password (dispatch << SetSignUpPassword)]
-        //    ]
-        //    div [attr.classes ["field"]] [
-        //        label [attr.classes ["label"]] [text "Repeat Password"]
-        //        input [attr.classes ["input"]; attr.``type`` "password"; bind.input.string signup.password (dispatch << SetSignUpPassword2)]
-        //    ]
-        //    div [attr.classes ["field"]] [
-        //        input [attr.classes ["input"]; attr.``type`` "submit"; attr.value "Sign up"]
-        //    ]
-        //]
-    ]
 
 
 let errorNotification err clear =
@@ -190,21 +152,19 @@ let view model dispatch =
         | Dashboard -> dashboardPage model dispatch
         | Edit id -> editPage model dispatch
         | Play id -> playPage model dispatch
-        | SignIn -> 
-            let state' = match model.state.signIn with
-                | Some x -> x
-                | None -> emptySignInState Dashboard
-            signInPage model state' dispatch
-        | SignUp -> 
-            let state' = match model.state.signUp with
-                | Some x -> x
-                | None -> emptySignUpState
-            signUpPage model state' dispatch
+        | SignIn ->
+            Auth.signInPage model.auth (fun x -> dispatch (AuthMsg x))
+        | SignUp ->
+            Auth.signUpPage model.auth (fun x -> dispatch (AuthMsg x))
         
         //notification
         div [attr.id "notification-area"] [
             match model.error with
             | None -> empty
             | Some err -> errorNotification err (fun _ -> dispatch ClearError)
+
+            match model.auth.error with
+            | None -> empty
+            | Some err -> errorNotification err (fun _ -> dispatch (AuthMsg Auth.ClearAuthError))
         ]
     ]
